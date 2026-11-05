@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {execFileSync} from 'node:child_process';
-import {existsSync,mkdirSync,mkdtempSync,readFileSync,readdirSync,renameSync,rmSync,symlinkSync,utimesSync,writeFileSync} from 'node:fs';
+import {existsSync,mkdirSync,mkdtempSync,readFileSync,renameSync,rmSync,symlinkSync,utimesSync,writeFileSync} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {FINAL_FILES,acquireLock,cleanup,command,inputFingerprints,paths,publish,removeGenerated,runtimeDirectory,tempEnvironment,writeJson} from '../lib/pipeline.mjs';
-import {resumeSegments} from '../lib/media.mjs';
+import {failureDetails} from '../lib/process-output.mjs';
 
 function fixture(t){
  const root=mkdtempSync(path.join(os.tmpdir(),'video-pipeline-test-'));
@@ -90,21 +89,12 @@ test('old versions are retained until the complete latest output is available',t
  assert(existsSync(path.join(p.out,'v1/cerita-kucing.mp4')));
 });
 
-test('resume keeps a valid prefix and removes a corrupt part and all following parts',t=>{
- const p=fixture(t),dir=path.join(p.checkpoints,'current/segments');mkdirSync(dir,{recursive:true});
- const first=path.join(dir,'0000-0001.mp4');
- execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i','color=c=orange:size=1920x1080:rate=30','-frames:v','2','-c:v','libx264','-threads','1','-preset','ultrafast',first]);
- put(path.join(dir,'0002-0003.mp4'),'broken');put(path.join(dir,'0004-0005.mp4'),'unused');put(path.join(dir,'0002-0003.partial.mp4'),'interrupted');
- assert.equal(resumeSegments(dir,{fps:30,durationInFrames:6},p),2);
- assert.deepEqual(readdirSync(dir),['0000-0001.mp4']);
-});
-
 test('child processes use the owned temporary directory and can be interrupted',async t=>{
  const p=fixture(t),runtime=runtimeDirectory(p),output=path.join(runtime,'where.txt');
  await command(process.execPath,['-e',`require('fs').writeFileSync(process.argv[1],require('os').tmpdir())`,output],{cwd:p.root,env:tempEnvironment(runtime)});
  assert.equal(readFileSync(output,'utf8'),runtime);
  const controller=new AbortController();const pending=command(process.execPath,['-e','setInterval(()=>{},1000)'],{cwd:p.root,signal:controller.signal});
- setTimeout(()=>controller.abort(),75);await assert.rejects(pending,/Checkpoint render disimpan/);
+ setTimeout(()=>controller.abort(),75);await assert.rejects(pending,/Data proyek tetap tersimpan/);
 });
 
 test('child processes accept literal stdin and report captured failures',async()=>{
@@ -112,6 +102,45 @@ test('child processes accept literal stdin and report captured failures',async()
  const result=await command(process.execPath,['-e',"process.stdin.pipe(process.stdout)"],{input,capture:true});
  assert.equal(result,input);
  await assert.rejects(command(process.execPath,['-e',"console.error('login diperlukan');process.exit(7)"],{capture:true}),/login diperlukan/);
+});
+
+test('streamed child failures retain bounded diagnostics through parent processes',async()=>{
+ const pipeline=new URL('../lib/pipeline.mjs',import.meta.url).href;
+ const child="process.stdout.write('x'.repeat(12000));console.error('Renderer gagal pada frame 1230: WebGL context lost');process.exit(1)";
+ // Isolate streamed output so the test runner's own stdout stays intact.
+ const script=String.raw`import assert from 'node:assert/strict';import {command} from ${JSON.stringify(pipeline)};
+  const output=[];
+  await assert.rejects(command(process.execPath,['-e',${JSON.stringify(child)}],{log:{write:chunk=>output.push(chunk)}}),error=>{
+   assert.match(error.message,/failed \(1\)/);
+   assert.match(error.message,/Renderer gagal pada frame 1230: WebGL context lost/);
+   assert(error.message.length<8200);
+   return true;
+  });
+  assert.match(Buffer.concat(output).toString(),/Renderer gagal/);`;
+ const output=await command(process.execPath,['--input-type=module','-e',script],{capture:true});
+ assert.match(output,/Renderer gagal pada frame 1230: WebGL context lost/);
+ const parent=`import {command} from ${JSON.stringify(pipeline)};try{await command(process.execPath,['-e',${JSON.stringify("console.error('Renderer gagal: browser terputus');process.exit(1)")}]);}catch(error){console.error(error.message);process.exitCode=1;}`;
+ await assert.rejects(command(process.execPath,['--input-type=module','-e',parent],{capture:true}),/Renderer gagal: browser terputus/);
+});
+
+test('stderr diagnostics survive a later flood of render progress',async()=>{
+ const script="console.error('Browser terputus: GPU process exited');setTimeout(()=>{process.stdout.write(Array.from({length:500},(_,i)=>'Rendered '+i+'/2448, time remaining: 1m 41s').join('\\n')+'\\n');process.exitCode=1;},30)";
+ await assert.rejects(command(process.execPath,['-e',script],{capture:true}),error=>{
+  assert.match(error.message,/node failed \(1\)/);
+  assert.match(error.message,/Browser terputus: GPU process exited/);
+  assert.match(error.message,/Progres terakhir: Rendered 499\/2448/);
+  assert(error.message.length<500);
+  return true;
+ });
+});
+
+test('failure summaries preserve the exit reason and final progress within the display limit',()=>{
+ const summary='node failed (1). Data proyek tetap tersimpan.';
+ const progress=Array.from({length:200},(_,i)=>`Rendered ${i}/2448, time remaining: 1m 41s`).join('\n');
+ const message=failureDetails(summary,progress);
+ assert(message.startsWith(summary));assert.match(message,/Progres terakhir: Rendered 199\/2448/);assert(message.length<200);
+ const long=failureDetails(summary,'Error awal\n'+'x'.repeat(12000)+'\nError akhir');
+ assert(long.startsWith(summary));assert(long.endsWith('Error akhir'));assert.equal(long.length,8000);
 });
 
 test('review changes reuse complete media, audio changes reuse picture, visual changes invalidate picture',t=>{

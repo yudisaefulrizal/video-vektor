@@ -1,19 +1,9 @@
-import {writeFileSync} from 'node:fs';
 import path from 'node:path';
-import assert from 'node:assert/strict';
 import {ROOT,command} from './lib/pipeline.mjs';
-import {segmentFiles,validateSegment} from './lib/media.mjs';
 
-export async function assemble({timeline,segments,inputVideo,output,runtime,signal,title='Cerita Kecil — Manusia & Kucing'}){
- const args=['-hide_banner','-loglevel','error','-y'];
- if(inputVideo)args.push('-i',inputVideo);
- else{
-  const files=segmentFiles(segments);let cursor=0;
-  for(const file of files){const [start,end]=file.replace('.mp4','').split('-').map(Number);assert.equal(start,cursor);validateSegment(path.join(segments,file),start,end,timeline);cursor=end+1;}
-  assert.equal(cursor,timeline.durationInFrames,'All frames must exist before assembling');
-  writeFileSync(path.join(segments,'concat.txt'),files.map(f=>`file '${f}'`).join('\n')+'\n');
-  args.push('-f','concat','-safe','0','-i',path.join(segments,'concat.txt'));
- }
+export async function assemble({timeline,inputVideo,output,runtime,signal,title='Cerita Kecil — Manusia & Kucing'}){
+ if(!inputVideo)throw new Error('Gambar video utuh belum tersedia. Jalankan render terlebih dahulu.');
+ const args=['-hide_banner','-loglevel','error','-y','-i',inputVideo];
  const fps=timeline.fps,duration=timeline.durationInFrames/fps;
  const publicDir=process.env.PIPELINE_PUBLIC_DIR??path.join(ROOT,'public');
  for(const s of timeline.scenes)args.push('-i',path.join(publicDir,`audio/scene-${s.index+1}.mp3`));

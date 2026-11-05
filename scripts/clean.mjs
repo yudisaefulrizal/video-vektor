@@ -7,5 +7,5 @@ try{
  const result=cleanup({p,purge:process.argv.includes('--checkpoints'),dryRun:process.argv.includes('--dry-run')});
  for(const file of result.targets)console.log(`${result.dryRun?'Would remove':'Removed'}: ${file}`);
  console.log(`${result.dryRun?'Can clean':'Cleaned'} ${(result.bytes/1024/1024).toFixed(1)} MB. Latest final output and source assets preserved.`);
- if(!process.argv.includes('--checkpoints'))console.log('Failed-render checkpoints retained. Use --checkpoints to explicitly discard them.');
+ if(!process.argv.includes('--checkpoints'))console.log('Complete picture cache retained. Use --checkpoints to explicitly discard it.');
 }finally{release();}

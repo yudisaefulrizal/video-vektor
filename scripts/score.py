@@ -41,7 +41,8 @@ for i,start in enumerate(np.arange(0,duration,6.4)):
 
 # Generic projects derive accents from actual animated actions, not paragraphs.
 if os.environ.get('PIPELINE_PROJECT_ID'):
-    props=json.loads((WORK/'render-props.json').read_text())
+    props_path=WORK/'render-props.json'
+    props=json.loads(props_path.read_text()) if props_path.exists() and not os.environ.get('PIPELINE_AUTHORED_SOURCE') else {'plan': {'shots': []}}
     for i,shot in enumerate(props['plan']['shots']):
         accent=shot.get('accent')
         if not accent: continue

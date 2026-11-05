@@ -5,6 +5,7 @@ import {mkdtempSync,rmSync,mkdirSync,writeFileSync,symlinkSync} from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {once} from 'node:events';
+import WebSocket from 'ws';
 import {StudioStore} from '../lib/studio-store.mjs';
 import {createStudioServer} from '../studio-server.mjs';
 import {progressReporter} from '../lib/progress.mjs';
@@ -51,6 +52,32 @@ test('pipeline status reports real frames and preserves the current step on fail
  assert.deepEqual(f.store.progress('mesin-uap').render,{completed:200,total:1000});
  report(undefined,'Render terhenti',{state:'failed'});assert.equal(f.store.progress('mesin-uap').step,5);assert.equal(f.store.progress('mesin-uap').state,'failed');
 });
+test('job details retain renderer output alongside an owned generic status after restart',t=>{
+ const f=fixture(t),job=f.store.create({title:'Sejarah beras Indonesia'});f.store.tick();
+ const cache=path.join(f.root,'.cache/video-pipeline/projects',job.projectId);
+ const report=progressReporter({id:job.projectId,cache},job.title);
+ report(5,'node failed (1). Data proyek tetap tersimpan.',{state:'failed'});
+ f.children[0].stderr.emit('data',Buffer.from('Renderer gagal pada frame 1230: WebGL context lost\n'));
+ f.children[0].emit('close',1);
+ assert.equal(job.state,'failed');assert.match(job.error,/node failed/);assert.match(job.error,/WebGL context lost/);
+ const restored=new StudioStore({root:f.root,launch:f.launch});assert.match(restored.get(job.id).error,/WebGL context lost/);
+});
+test('unexpected process signals retain captured diagnostics in job details',t=>{
+ const f=fixture(t),job=f.store.create({title:'Render terputus mendadak'});f.store.tick();
+ f.children[0].stderr.emit('data',Buffer.from('Chrome gagal mengambil frame\n'));
+ f.children[0].emit('close',null,'SIGTERM');
+ assert.equal(job.state,'failed');assert.match(job.error,/SIGTERM/);assert.match(job.error,/Chrome gagal mengambil frame/);
+});
+test('render progress cannot displace the failure status in persisted job details',t=>{
+ const f=fixture(t),job=f.store.create({title:'Render dengan banyak progres'});f.store.tick();
+ const cache=path.join(f.root,'.cache/video-pipeline/projects',job.projectId);
+ const report=progressReporter({id:job.projectId,cache},job.title);
+ report(5,'node failed (1). Data proyek tetap tersimpan.',{state:'failed'});
+ f.children[0].stderr.emit('data',Buffer.from('Browser menerima SIGTERM\n'));
+ for(let i=1500;i<=1749;i++)f.children[0].stdout.emit('data',Buffer.from(`Rendered ${i}/2448, time remaining: 1m 41s\n`));
+ f.children[0].emit('close',1);
+ assert.match(job.error,/node failed \(1\)/);assert.match(job.error,/Browser menerima SIGTERM/);assert.match(job.error,/Rendered 1749\/2448/);assert(job.error.length<250);
+});
 test('HTTP API persists schedules, rejects foreign origins, and serves seekable final files only',async t=>{
  const f=fixture(t),app=createStudioServer({root:f.root,store:f.store,startScheduler:false});
  app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>app.close());
@@ -67,5 +94,6 @@ test('HTTP API persists schedules, rejects foreign origins, and serves seekable 
  response=await request('/media/contoh-video/video.mp4','GET',undefined,{Range:'bytes=99-100'});assert.equal(response.status,416);
  response=await request('/media/contoh-video/secret.txt');assert.equal(response.status,404);
  symlinkSync(path.join(f.root,'package.json'),path.join(folder,'naskah.json'));response=await request('/media/contoh-video/naskah.json');assert.equal(response.status,404);
- const controller=new AbortController();response=await fetch(base+'/api/events',{signal:controller.signal});const stream=response.body.getReader();const first=await stream.read();assert.match(new TextDecoder().decode(first.value),/event: state/);controller.abort();await stream.cancel().catch(()=>{});
+ const socket=new WebSocket(base.replace('http:','ws:')+'/api/socket');
+ const [message]=await once(socket,'message');assert.equal(JSON.parse(message.toString()).type,'state');socket.close();await once(socket,'close');
 });

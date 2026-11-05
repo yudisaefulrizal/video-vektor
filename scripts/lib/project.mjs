@@ -15,7 +15,7 @@ export function projectSlug(title){
 export function projectPaths(id){
  if(!/^[a-z0-9][a-z0-9-]{0,71}$/.test(id))throw new Error('ID proyek tidak valid.');
  const base=paths(ROOT,id);
- return {...base,id,script:path.join(base.out,'naskah.json'),metadata:path.join(base.cache,'project.json'),publicDir:path.join(base.cache,'public'),audioDir:path.join(base.cache,'public/audio'),timeline:path.join(base.cache,'timeline.json'),plan:path.join(base.cache,'animation-plan.json'),props:path.join(base.cache,'render-props.json')};
+ return {...base,id,script:path.join(base.out,'naskah.json'),metadata:path.join(base.cache,'project.json'),publicDir:path.join(base.cache,'public'),audioDir:path.join(base.cache,'public/audio'),timeline:path.join(base.cache,'timeline.json'),plan:path.join(base.cache,'animation-plan.json'),props:path.join(base.cache,'render-props.json'),source:path.join(base.cache,'source'),session:path.join(base.cache,'session.json'),control:path.join(base.cache,'control.json')};
 }
 export function projectEnvironment(p){
  return {PIPELINE_PROJECT_ID:p.id,PIPELINE_PROJECT_DIR:p.out,PIPELINE_WORK_DIR:p.cache,PIPELINE_PUBLIC_DIR:p.publicDir};

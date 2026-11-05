@@ -2,6 +2,8 @@ import {createHash,randomUUID} from 'node:crypto';
 import {spawn,spawnSync} from 'node:child_process';
 import {closeSync,existsSync,lstatSync,mkdirSync,mkdtempSync,openSync,readFileSync,readdirSync,renameSync,rmSync,statSync,writeFileSync} from 'node:fs';
 import path from 'node:path';
+import {signalProcessTree} from './process-tree.mjs';
+import {failureDetails} from './process-output.mjs';
 import {fileURLToPath} from 'node:url';
 
 export const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -78,7 +80,7 @@ export function acquireLock(p=paths()){
  const token=randomUUID();
  for(let attempt=0;attempt<2;attempt++){
   try{
-   const fd=openSync(p.lock,'wx');writeFileSync(fd,JSON.stringify({pid:process.pid,token}));closeSync(fd);
+   const fd=openSync(p.lock,'wx');writeFileSync(fd,JSON.stringify({pid:process.pid,token,projectId:path.basename(p.out)}));closeSync(fd);
    return ()=>{if(existsSync(p.lock)&&readJson(p.lock).token===token)rmSync(p.lock);};
   }catch(error){
    if(error.code!=='EEXIST')throw error;
@@ -102,22 +104,24 @@ export function runtimeDirectory(p=paths()){
  if(existsSync(p.runtime)&&lstatSync(p.runtime).isSymbolicLink())throw new Error('Refusing a symlinked temporary directory');
  mkdirSync(p.runtime,{recursive:true});
  const runtime=mkdtempSync(path.join(p.runtime,'r-'));
- writeJson(path.join(runtime,'.pipeline-owner.json'),{root:p.root});return runtime;
+ writeJson(path.join(runtime,'.pipeline-owner.json'),{root:p.root,projectId:path.basename(p.out),pid:process.pid});return runtime;
 }
 export function command(program,args,{cwd=ROOT,env={},signal,log,capture=false,input}={}){
  return new Promise((resolve,reject)=>{
-  const child=spawn(program,args,{cwd,env:{...process.env,...env},stdio:[input===undefined?'ignore':'pipe','pipe','pipe'],detached:process.platform!=='win32'});
+  const child=spawn(program,args,{cwd,env:{...process.env,...env},stdio:[input===undefined?'ignore':'pipe','pipe','pipe'],detached:false});
   if(input!==undefined){child.stdin.on('error',()=>{});child.stdin.end(input);}
-  const captured=[];
-  const forward=data=>{if(capture)captured.push(data);else process.stdout.write(data);if(log)log.write(data);};
-  child.stdout.on('data',forward);child.stderr.on('data',forward);
-  const stop=()=>{try{process.kill(process.platform==='win32'?child.pid:-child.pid,'SIGTERM');}catch{}};
+  const captured=[];let tail='',stderr='';
+  const forward=(data,stream)=>{tail=(tail+data.toString()).slice(-8000);if(capture)captured.push(data);else stream.write(data);if(log)log.write(data);};
+  child.stdout.on('data',data=>forward(data,process.stdout));
+  child.stderr.on('data',data=>{stderr=(stderr+data.toString()).slice(-8000);forward(data,process.stderr);});
+  const stop=()=>signalProcessTree(child.pid);
   signal?.addEventListener('abort',stop,{once:true});
   if(signal?.aborted)stop();
   child.on('error',error=>{signal?.removeEventListener('abort',stop);reject(error);});
   child.on('close',(code,killed)=>{
    signal?.removeEventListener('abort',stop);
-   if(code===0&&!signal?.aborted)resolve(capture?Buffer.concat(captured).toString('utf8'):undefined);else reject(new Error(`${path.basename(program)} failed (${killed??code}).${capture?'\n'+Buffer.concat(captured).toString('utf8').slice(-3000):' Checkpoint render disimpan untuk dilanjutkan.'}`));
+   if(code===0&&!signal?.aborted)resolve(capture?Buffer.concat(captured).toString('utf8'):undefined);
+   else reject(new Error(failureDetails(`${path.basename(program)} failed (${killed??code}). Data proyek tetap tersimpan.`,tail.includes(stderr)?tail:`${stderr}\n${tail}`)));
   });
  });
 }

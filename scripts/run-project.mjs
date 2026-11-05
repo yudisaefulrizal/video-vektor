@@ -1,102 +1,82 @@
 import path from 'node:path';
-import {copyFileSync,cpSync,existsSync,mkdirSync,readdirSync,renameSync} from 'node:fs';
-import {ROOT,FINAL_FILES,acquireLock,checksum,cleanup,command,fingerprint,publish,pythonFor,readJson,removeGenerated,runtimeDirectory,tempEnvironment,writeJson} from './lib/pipeline.mjs';
-import {ensureProject,projectEnvironment,projectPaths,projectSlug} from './lib/project.mjs';
-import {createScript,createPlan} from './lib/generation.mjs';
-import {validateTimeline,reviewProject} from './lib/project-review.mjs';
-import {partName,resumeSegments,validateSegment,verifyOutput} from './lib/media.mjs';
-import {assemble} from './assemble.mjs';
-import {exportAudio} from './export-audio.mjs';
-import {progressReporter} from './lib/progress.mjs';
+import {appendFileSync,cpSync,existsSync,mkdirSync,writeFileSync} from 'node:fs';
+import {ROOT,FINAL_FILES,acquireLock,cleanup,command,readJson,writeJson,runtimeDirectory,removeGenerated} from './lib/pipeline.mjs';
+import {projectPaths,projectSlug,projectEnvironment,ensureProject} from './lib/project.mjs';
+import {runCodexSession} from './lib/codex-session.mjs';
+import {progressReporter,updateProgress} from './lib/progress.mjs';
 
-export async function runProject({title,id,regenerate=false,replan=false,force=false,assembleOnly=false,qualityFeedback=null,repairAttempt=0}){
- const p=projectPaths(id??projectSlug(title));
- Object.assign(process.env,projectEnvironment(p));
- const release=acquireLock(p),controller=new AbortController(),stop=()=>controller.abort();
- process.on('SIGINT',stop);process.on('SIGTERM',stop);
- let runtime,checkpoint,published=false,retry=null,report;
+const read=file=>{try{return readJson(file);}catch{return null;}};
+const quote=value=>`'${String(value).replaceAll("'","'\\''")}'`;
+export async function runProject({title,id,regenerate=false,replan=false,force=false,assembleOnly=false,timeoutSeconds=0}){
+ const p=projectPaths(id??projectSlug(title));Object.assign(process.env,projectEnvironment(p));
+ const release=acquireLock(p),controller=new AbortController();let runtime,timer,report,stopState=null;
+ const stop=(state,message)=>{if(controller.signal.aborted)return;stopState=state;controller.abort(new Error(message));};
+ const interrupted=()=>stop('stopped','Pekerjaan dihentikan.');process.on('SIGINT',interrupted);process.on('SIGTERM',interrupted);
  try{
-  ensureProject(p);
-  let metadata;try{metadata=readJson(p.metadata);}catch{}
-  title=title??metadata?.title??p.id.replace(/-/g,' ');
-  if(metadata?.title&&metadata.title.toLowerCase()!==title.toLowerCase()&&!regenerate)throw new Error('Nama folder sudah dipakai judul lain. Gunakan --id berbeda atau --regenerate untuk mengganti isi proyek ini.');
+  ensureProject(p);const previous=read(p.metadata);title=title??previous?.title??p.id.replaceAll('-',' ');
+  if(previous?.title&&previous.title.toLowerCase()!==title.toLowerCase())throw new Error('Folder ini sudah digunakan judul lain. Pilih ID proyek lain.');
   report=progressReporter(p,title);report(1,'Folder proyek siap.');
+  const jobId=process.env.PIPELINE_JOB_ID??null,control=read(p.control),fromQueue=jobId&&control?.jobId===jobId;
+  const startedAt=fromQueue?control.startedAt:new Date().toISOString();
+  if(!fromQueue)writeJson(p.control,{jobId,pid:process.pid,startedAt,timeoutSeconds,stopRequested:false});
+  const checkControl=()=>{
+   const current=read(p.control);if(!current)return;
+   if(current.stopRequested)stop('stopped','Dihentikan oleh pengguna.');
+   if(current.timeoutSeconds>0&&Date.now()-Date.parse(current.startedAt)>=current.timeoutSeconds*1000)stop('timed_out','Batas waktu yang Anda atur sudah tercapai.');
+  };
+  timer=setInterval(checkControl,1000);checkControl();controller.signal.throwIfAborted();
   runtime=runtimeDirectory(p);const stage=path.join(runtime,'stage');mkdirSync(stage);
-  const env={...projectEnvironment(p),...tempEnvironment(runtime,stage)},signal=controller.signal;
-  console.log(`[1/7] Judul: ${title}\nFolder: ${p.out}`);
-  report(2,'Membuat atau membaca naskah melalui Codex CLI.');
-  const script=await createScript({title,p,regenerate,signal});
-  let savedMetadata={};try{savedMetadata=readJson(p.metadata);}catch{}
-  writeJson(p.metadata,{...savedMetadata,title,id:p.id});
-  console.log(`[2/7] Naskah tersimpan: ${p.script}`);
-  report(3,'Menyiapkan narasi dan timing kata.');
-  cpSync(path.join(ROOT,'public/fonts'),path.join(p.publicDir,'fonts'),{recursive:true});
-  const python=existsSync(path.join(ROOT,'.venv/bin/python'))?path.join(ROOT,'.venv/bin/python'):'python3';
-  await command(python,['scripts/prepare_audio.py'],{env,signal});
-  const timeline=readJson(p.timeline);validateTimeline(script,timeline);
-  for(const name of readdirSync(p.audioDir)){
-   const match=/^scene-(\d+)\.(?:mp3|json|meta\.json)$/.exec(name);
-   if(match&&Number(match[1])>script.length)removeGenerated(path.join(p.audioDir,name),p);
+  const session=read(p.session)??{};
+  writeJson(p.session,{...session,runtime,stage,force,regenerate,replan,pid:process.pid});
+  writeJson(p.metadata,{...previous,title,id:p.id});
+  // Use the approved cat film as a code reference, isolated per project.
+  if(!existsSync(path.join(p.source,'index.ts'))){
+   cpSync(path.join(ROOT,'src'),p.source,{recursive:true,filter:file=>!file.split(path.sep).includes('generic')});
+   writeJson(path.join(p.cache,'source-origin.json'),{reference:'src/Film.tsx + src/Story.tsx',mode:'authored-remotion'});
   }
-  console.log('[3/7] Terjemahkan motion_description menjadi aset dan keyframe.');
-  report(4,'Menyusun aset, gerak objek, dan kamera melalui Codex CLI.');
-  const plan=await createPlan({title,p,script,timeline,regenerate:regenerate||replan,feedback:qualityFeedback,signal});
-  const props={title,projectId:p.id,width:1920,height:1080,timeline,plan};writeJson(p.props,props);
-  report(4,'Menyiapkan musik dan efek suara.');
-  await command(pythonFor('numpy'),['scripts/score.py'],{env,signal});
-  const relative=file=>path.relative(ROOT,file);
-  const visual=fingerprint(['src/generic','src/style.css','package-lock.json','remotion.config.ts',relative(p.props),relative(path.join(p.publicDir,'fonts'))]);
-  const audio=fingerprint([relative(p.audioDir),'scripts/assemble.mjs']);
-  const build=fingerprint([relative(p.script),relative(p.props),relative(p.audioDir),'src/generic','src/style.css','package-lock.json','remotion.config.ts','scripts/assemble.mjs','scripts/export-audio.mjs','scripts/lib/project-review.mjs']);
-  checkpoint=path.join(p.checkpoints,visual);const segments=path.join(checkpoint,'segments');mkdirSync(segments,{recursive:true});
-  for(const name of readdirSync(p.checkpoints))if(name!==visual)removeGenerated(path.join(p.checkpoints,name),p);
-  writeJson(path.join(checkpoint,'manifest.json'),{visual,frames:timeline.durationInFrames});
-  let receipt;try{receipt=readJson(p.receipt);}catch{}
-  const current=path.join(p.out,'video.mp4');
-  const reusable=!force&&receipt?.visual===visual&&existsSync(current)&&checksum(current)===receipt.files?.['video.mp4'];
-  if(reusable&&receipt.build===build&&FINAL_FILES.every(name=>existsSync(path.join(p.out,name))&&checksum(path.join(p.out,name))===receipt.files[name])){
-   verifyOutput(current,timeline);cleanup({p,completed:true});writeJson(path.join(ROOT,'.cache/video-pipeline/last-project.json'),{id:p.id,title});report(7,'Hasil terbaru masih valid dan siap ditonton.',{state:'completed'});console.log('Hasil terbaru masih valid; tidak perlu render ulang.');return;
-  }
-  console.log('[4/7] Render memakai renderer dinamis yang sama untuk semua judul.');
-  report(5,'Menyiapkan render Remotion + Three.js.',{render:{completed:0,total:timeline.durationInFrames}});
-  if(!reusable){
-   if(force)for(const name of readdirSync(segments))removeGenerated(path.join(segments,name),p);
-   let cursor=resumeSegments(segments,timeline,p);
-   report(5,'Merender animasi dan gerak kamera.',{render:{completed:cursor,total:timeline.durationInFrames}});
-   while(cursor<timeline.durationInFrames){
-    if(assembleOnly)throw new Error('Gambar belum lengkap. Jalankan pipeline tanpa --assemble-only.');
-    const end=Math.min(cursor+199,timeline.durationInFrames-1),name=partName(cursor,end),partial=path.join(segments,name.replace('.mp4','.partial.mp4'));
-    await command(process.execPath,['node_modules/@remotion/cli/remotion-cli.js','render','src/generic/index.tsx','NarrativeVisual',partial,`--frames=${cursor}-${end}`,`--props=${p.props}`,`--public-dir=${p.publicDir}`,`--gl=${process.env.REMOTION_GL??'angle'}`,'--muted','--log=error'],{env,signal});
-    validateSegment(partial,cursor,end,timeline);renameSync(partial,path.join(segments,name));cursor=end+1;
-    console.log(`Frame ${cursor}/${timeline.durationInFrames}`);
-    report(5,'Merender animasi dan gerak kamera.',{render:{completed:cursor,total:timeline.durationInFrames}});
+  const helper=`${quote(process.execPath)} ${quote(path.join(ROOT,'scripts/session-step.mjs'))} --project ${p.id}`;
+  const prompt=`Kerjakan produksi video untuk judul ${JSON.stringify(title)} dalam sesi ini sampai hasil final tersedia.
+Gunakan mekanisme video kucing yang sudah berhasil: tulis kode adegan Remotion + Three.js secara langsung, dengan penyutradaraan khusus cerita. Acuan kode ada di src/Story.tsx, src/edit.ts, src/Film.tsx, src/components. Salinannya untuk proyek ini ada di ${p.source}.
+Jangan membuat pipeline baru, kontrak JSON animasi, DSL gerakan, atau sesi Codex lain. Jangan memasang dependensi, menjalankan pengujian, preview, storyboard, render sampel, atau git commit. Pakai alat untuk membaca/menulis kode dan langkah produksi di bawah. Jangan mengubah sumber di src/, skill/, studio/, atau scripts/.
+1. Naskah: baca skill/pembuat-naskah.md dan terapkan pada judul. Simpan hasil array JSON langsung ke ${p.script}. File skill harus tetap utuh. ${regenerate?'Buat ulang naskah sesuai permintaan.':'Jika naskah sudah ada, gunakan kembali.'}
+2. Jalankan ${helper} --stage audio. Langkah ini menyiapkan narasi, timing, subtitle, font, dan timeline.json lokal. Baca ${p.timeline} untuk menyelaraskan cerita.
+3. Buat atau perbaiki kode animasi di ${p.source}. Tulis ilustrasi dan gerakan langsung dengan React/SVG/Three.js dan fungsi animasi Remotion. Pertahankan gaya film layar penuh yang mengalir seperti video kucing: aksi sebab-akibat, perpindahan kamera, karakter/objek yang bergerak, sambungan antaradegan; hindari halaman web, kartu slide, jeda kosong, atau poster yang sekadar di-zoom. Sesuaikan ilustrasi dengan judul, jangan menyisakan cerita kucing pada tema lain. Tidak ada batas buatan jumlah objek atau shot.
+Aturan teks dalam adegan (di luar subtitle): teks hanya boleh muncul jika informasi memang tidak dapat disampaikan dengan jelas melalui ilustrasi atau animasi, misalnya rumus, angka, dan langkah perhitungan yang perlu dibaca. Jika informasi dapat diilustrasikan, buat ilustrasinya tanpa menambahkan judul, label, slogan, atau teks penjelas. Tidak adanya ilustrasi karena belum dibuat bukan alasan untuk menggantinya dengan teks. key_text pada naskah tidak wajib ditampilkan dan tetap tunduk pada aturan ini. Terapkan aturan ini juga pada teks yang sudah ada saat memperbaiki atau melanjutkan kode proyek. Aturan ini tidak mengubah subtitle narasi.
+Film.tsx menyediakan VisualFilm dan Film; Root.tsx harus mendaftarkan ProjectVisual dan ProjectFilm pada 1920x1080 dengan fps/durasi dari timeline.json. node_modules dan remotion.config.ts memakai milik root proyek. ${replan?'Perbarui penyutradaraan dan kode animasinya.':'Jika kode proyek sudah dibuat untuk judul ini, lanjutkan dari kode tersebut dan sesuaikan bila naskah atau timing berubah.'}
+4. Setelah kode siap, akhiri respons dengan ringkasan singkat. Proses utama aplikasi akan menjalankan render produksi dan menyimpan video serta audio final. Jangan menjalankan helper --stage render atau --stage finish dari alat sesi Codex; render panjang harus dijalankan proses utama, bukan alat model.
+Stop dan timeout dikendalikan pengguna melalui aplikasi. Jika langkah dihentikan, jangan menjalankan ulang atau mengganti timeout/control.json. Dilarang mengedit session.json/control.json/status.json untuk menyatakan langkah selesai; helper yang memperbarui status. Tulis hasil kerja ke berkas proyek, jawaban akhir cukup ringkasan singkat.`;
+  const activity=(kind,message)=>{
+   const current=read(path.join(p.cache,'status.json'))??{};
+   updateProgress(p,{logs:[...(current.logs??[]),{at:new Date().toISOString(),kind,message}].slice(-30)});
+  };
+  const productionLog=path.join(p.cache,'production.log');
+  writeFileSync(productionLog,`Produksi ${p.id} dimulai ${startedAt}\n`);
+  const productionStep=async stage=>{
+   appendFileSync(productionLog,`\nTahap ${stage}\n`);
+   try{await command(process.execPath,[path.join(ROOT,'scripts/session-step.mjs'),'--project',p.id,'--stage',stage],{env:projectEnvironment(p),signal:controller.signal,log:{write:chunk=>appendFileSync(productionLog,chunk)}});}
+   catch(error){
+    const failure=read(path.join(p.cache,'failure.json'));
+    const detail=failure?.parentPid===process.pid&&failure.stage===stage?failure.message:error.message;
+    const message=`Tahap ${stage} gagal. Log lengkap: ${productionLog}\n${detail}`;
+    appendFileSync(productionLog,`\n${message}\n`);throw new Error(message,{cause:error});
    }
+  };
+  if(!assembleOnly){
+   report(2,'Satu sesi Codex sedang menyiapkan naskah dan kode video.');
+   await runCodexSession({p,prompt,signal:controller.signal,env:projectEnvironment(p),onActivity:activity});
+   controller.signal.throwIfAborted();
+   await productionStep('render');
   }
-  const video=path.join(stage,'video.mp4');
-  report(6,'Menggabungkan gambar, narasi, musik, dan efek suara.');
-  if(reusable&&receipt.audio===audio)copyFileSync(current,video);
-  else await assemble({timeline,segments,inputVideo:reusable?current:undefined,output:video,runtime,signal,title});
-  console.log('[5/7] Ekspor narasi, musik dan audio final.');
-  verifyOutput(video,timeline);await exportAudio({timeline,video,stage,runtime,signal});
-  copyFileSync(p.script,path.join(stage,'naskah.json'));renameSync(path.join(stage,'kucing.id.srt'),path.join(stage,'subtitle.srt'));
-  console.log('[6/7] Pemeriksaan hasil sebelum mengganti video final.');
-  report(7,'Memeriksa video, audio, dan gerakan sebelum menyimpan hasil.');
-  await reviewProject({video,props,stage,runtime,signal});
-  const files=Object.fromEntries(FINAL_FILES.map(name=>[name,checksum(path.join(stage,name))]));
-  writeJson(path.join(stage,'build-manifest.json'),{version:4,projectId:p.id,title,visual,audio,build,verifiedAt:new Date().toISOString(),files});
-  publish(stage,p);published=true;
-  console.log('[7/7] Bersihkan sementara; simpan satu hasil terbaru.');cleanup({p,completed:true});
+  controller.signal.throwIfAborted();
+  await productionStep('finish');
+  controller.signal.throwIfAborted();
+  const state=read(path.join(p.cache,'status.json'));
+  if(state?.state!=='completed'||!FINAL_FILES.every(name=>existsSync(path.join(p.out,name))))throw new Error('Produksi berakhir sebelum hasil final tersimpan. Kode proyek dipertahankan untuk dilanjutkan.');
+  cleanup({p,completed:true});
   writeJson(path.join(ROOT,'.cache/video-pipeline/last-project.json'),{id:p.id,title});
-  console.log(`Selesai: ${path.join(p.out,'video.mp4')}`);
-  report(7,'Video dan audio siap. File sementara sudah dibersihkan.',{state:'completed'});
- }catch(error){
-  if(checkpoint)writeJson(path.join(checkpoint,'failure.json'),{message:error.message,at:new Date().toISOString()});
-  if(error.code==='MOTION_FREEZE'&&repairAttempt<1&&!controller.signal.aborted){
-   retry={title,id:p.id,replan:true,qualityFeedback:error.feedback,repairAttempt:repairAttempt+1};
-   console.log('Gerak terlalu diam; rencana animasi akan diperbaiki otomatis satu kali tanpa menulis ulang naskah.');
-  }else {report?.(undefined,error.message,{state:'failed'});throw new Error(`${error.message}\n${published?'Hasil baru sudah tersimpan; ulangi cleanup.':'Naskah dan checkpoint dipertahankan; hasil video sebelumnya tetap tersimpan.'}`);}
- }finally{
-  try{if(runtime)removeGenerated(runtime,p);}finally{release();process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);}
+ }catch(error){report?.(undefined,error.message,{state:stopState??'failed'});throw error;}
+ finally{
+  clearInterval(timer);process.removeListener('SIGINT',interrupted);process.removeListener('SIGTERM',interrupted);
+  try{if(runtime)removeGenerated(runtime,p);}finally{release();}
  }
- if(retry)return runProject(retry);
 }
