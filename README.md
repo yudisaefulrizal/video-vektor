@@ -80,6 +80,14 @@ Satu proyek menyimpan satu hasil terbaru:
 
 ```text
 hasil/<id-proyek>/
+├── source/
+│   ├── index.ts
+│   ├── Root.tsx
+│   ├── Film.tsx
+│   ├── Story.tsx
+│   ├── edit.ts
+│   ├── timeline.json
+│   └── components/
 ├── video.mp4
 ├── narasi.wav
 ├── musik.wav
@@ -90,7 +98,9 @@ hasil/<id-proyek>/
 
 Audio berupa WAV stereo 48 kHz. `narasi.wav` berisi suara bersih pada timing video; `musik.wav` berisi musik pada level video; `audio-final.wav` diambil dari audio video final.
 
-Sumber animasi disimpan di `.cache/video-pipeline/projects/<id>/source/`, bersama timeline, cache audio, ID sesi Codex, dan cache gambar video yang sudah selesai dirender. Ini dipertahankan untuk melanjutkan pekerjaan tanpa membuat ulang bagian yang sudah tersedia. Hasil proyek lama tetap dapat dibuka dari UI.
+Kode animasi tiap video disimpan permanen di `hasil/<id>/source/`, terpisah dari kode video lain dan berdampingan dengan naskah serta hasil finalnya. Render, preview, dan perbaikan kode memakai folder ini. Kode tetap tersedia saat produksi gagal maupun setelah pembersihan cache. Kode proyek lama di `.cache/video-pipeline/projects/<id>/source/` otomatis dipindahkan saat proyek dilanjutkan atau perintah preview/still dijalankan; folder source yang sudah ada di hasil tidak ditimpa.
+
+Timeline kerja, cache audio, ID sesi Codex, dan cache gambar video yang sudah selesai dirender tetap berada di `.cache/video-pipeline/projects/<id>/`. Salinan timeline untuk kompilasi animasi berada di `source/timeline.json`. Cache ini dipertahankan untuk melanjutkan pekerjaan tanpa membuat ulang bagian yang sudah tersedia. Hasil proyek lama tetap dapat dibuka dari UI. Folder `hasil/` dan `.cache/` tetap diabaikan Git; repositori menyimpan kode pipeline, bukan hasil produksi lokal.
 
 Jika produksi gagal, **Detail** menampilkan pesan kegagalan dan progres terakhir. Log render/penggabungan terbaru tersimpan di `.cache/video-pipeline/projects/<id>/production.log`; kegagalan helper juga dicatat ke `failure.json` di folder yang sama. Log tetap tersedia setelah file sementara dibersihkan.
 

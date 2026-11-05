@@ -1,7 +1,7 @@
 import path from 'node:path';
 import {copyFileSync,cpSync,existsSync,mkdirSync,renameSync,rmSync,writeFileSync} from 'node:fs';
 import {ROOT,FINAL_FILES,checksum,command,fingerprint,publish,pythonFor,readJson,writeJson,tempEnvironment} from './lib/pipeline.mjs';
-import {projectPaths,projectEnvironment,loadEnvironment} from './lib/project.mjs';
+import {ensureProject,projectPaths,projectEnvironment,loadEnvironment} from './lib/project.mjs';
 import {renderPicture,verifyPicture,verifyOutput} from './lib/media.mjs';
 import {assemble} from './assemble.mjs';
 import {exportAudio} from './export-audio.mjs';
@@ -12,6 +12,7 @@ const args=process.argv.slice(2),value=flag=>args[args.indexOf(flag)+1];
 if(!args.includes('--project')||!args.includes('--stage'))throw new Error('Berikan --project dan --stage audio/render/finish.');
 const p=projectPaths(value('--project')),stageName=value('--stage'),session=readJson(p.session),meta=readJson(p.metadata);
 const lock=readJson(p.lock);if(lock.pid!==session.pid)throw new Error('Sesi produksi tidak lagi aktif.');
+ensureProject(p);
 const runtime=session.runtime,stage=session.stage;
 if(!runtime?.startsWith(p.runtime+path.sep)||!stage?.startsWith(runtime+path.sep))throw new Error('Folder kerja sesi tidak valid.');
 Object.assign(process.env,projectEnvironment(p),{PIPELINE_AUTHORED_SOURCE:'1'});
