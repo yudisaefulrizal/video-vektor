@@ -41,12 +41,14 @@ Pipeline menggunakan login ChatGPT yang tersimpan di Codex CLI, tanpa API key at
 
 1. Membuat folder proyek berdasarkan judul.
 2. Dalam satu sesi Codex, membaca `skill/pembuat-naskah.md` dan menyimpan hasilnya ke `hasil/<id>/naskah.json`. Skill tidak diedit.
-3. Menjalankan helper audio yang sudah ada untuk narasi, timing kata, subtitle, dan musik.
+3. Menjalankan helper audio yang sudah ada untuk narasi, timing kata, transkrip audio SRT, dan musik.
 4. Melanjutkan sesi yang sama untuk menulis kode adegan berdasarkan naskah dan timing, memakai sumber video kucing sebagai acuan. Setiap proyek memiliki sumber Remotion sendiri.
 5. Setelah Codex menyiapkan kode, proses utama aplikasi merender seluruh durasi video dalam satu pemanggilan Remotion. Progres frame tetap dikirim ke UI melalui WebSocket.
 6. Menggabungkan gambar dan audio, menyimpan enam berkas final, lalu membersihkan file sementara.
 
 Tidak ada pemanggilan AI terpisah untuk arahan, setiap kelompok aset, atau setiap kelompok gerakan. Jalur produksi baru tidak memakai kontrak JSON animasi, DSL gerakan, atau batas buatan jumlah entity/shot. Tahap pada UI adalah laporan pekerjaan dalam sesi yang sama.
+
+Video baru memakai narasi untuk menjelaskan dan animasi untuk memperlihatkan. Adegan mengikuti perkembangan gagasan; setiap kalimat tidak harus menghasilkan pergantian adegan atau teks. Teks visual digunakan secara selektif untuk angka, rumus, istilah penting, label objek, dan kesimpulan singkat, terintegrasi dengan animasi pada waktu yang relevan. Transkrip narasi tidak ditampilkan sebagai subtitle dan tidak ada fitur pilihan subtitle. Kebijakan ini tidak mengubah proyek lama atau `skill/pembuat-naskah.md`.
 
 Pipeline tidak otomatis menjalankan typecheck, pengujian, render sampel, storyboard, atau perencanaan ulang berdasarkan penilaian visual. Metadata dan kelengkapan video utuh tetap diperiksa untuk penggabungan dan penyimpanan. Pemeriksaan kualitas cerita dan gerakan dilakukan pengguna pada video final.
 
@@ -97,6 +99,8 @@ hasil/<id-proyek>/
 ```
 
 Audio berupa WAV stereo 48 kHz. `narasi.wav` berisi suara bersih pada timing video; `musik.wav` berisi musik pada level video; `audio-final.wav` diambil dari audio video final.
+
+`subtitle.srt` tetap disimpan dengan nama yang sama sebagai data transkrip audio bertiming untuk kebutuhan internal. Berkas ini disebut **Transkrip audio** di daftar unduhan; data transkrip dan timing kata tetap tersedia untuk sinkronisasi animasi.
 
 Kode animasi tiap video disimpan permanen di `hasil/<id>/source/`, terpisah dari kode video lain dan berdampingan dengan naskah serta hasil finalnya. Render, preview, dan perbaikan kode memakai folder ini. Kode tetap tersedia saat produksi gagal maupun setelah pembersihan cache. Kode proyek lama di `.cache/video-pipeline/projects/<id>/source/` otomatis dipindahkan saat proyek dilanjutkan atau perintah preview/still dijalankan; folder source yang sudah ada di hasil tidak ditimpa.
 
