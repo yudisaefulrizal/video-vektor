@@ -3,7 +3,7 @@ import {readJson,writeJson,ROOT} from './pipeline.mjs';
 import {signalProcessTree} from './process-tree.mjs';
 
 export const AGENTS={codex:'Codex',claude:'Claude',cline:'Cline'};
-export const DEFAULT_AGENT='codex';
+export const DEFAULT_AGENT='claude';
 
 export function resolveAgent(value){
  const agent=String(value||process.env.AGENT||DEFAULT_AGENT).trim().toLowerCase();

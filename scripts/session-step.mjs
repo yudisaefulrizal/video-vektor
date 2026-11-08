@@ -6,7 +6,7 @@ import {renderPicture,verifyPicture,verifyOutput} from './lib/media.mjs';
 import {assemble} from './assemble.mjs';
 import {exportAudio} from './export-audio.mjs';
 import {updateProgress} from './lib/progress.mjs';
-import {agentLabel} from './lib/agent-session.mjs';
+import {agentLabel,DEFAULT_AGENT} from './lib/agent-session.mjs';
 
 loadEnvironment();
 const args=process.argv.slice(2),value=flag=>args[args.indexOf(flag)+1];
@@ -42,7 +42,7 @@ try{
   copyFileSync(p.timeline,path.join(p.source,'timeline.json'));
   copyFileSync(path.join(stage,'kucing.id.srt'),path.join(p.cache,'subtitle.srt'));
   writeFileSync(path.join(p.source,'Root.tsx'),`import React from 'react';\nimport {Composition} from 'remotion';\nimport {Film,VisualFilm} from './Film';\nimport timeline from './timeline.json';\nexport const Root:React.FC=()=> <>\n<Composition id="ProjectFilm" component={Film} durationInFrames={timeline.durationInFrames} fps={timeline.fps} width={1920} height={1080}/>\n<Composition id="ProjectVisual" component={VisualFilm} durationInFrames={timeline.durationInFrames} fps={timeline.fps} width={1920} height={1080}/>\n</>;\n`);
-  report(4,`${agentLabel(session.agent??'codex')} menyusun kode adegan Remotion + Three.js dalam sesi yang sama.`);
+  report(4,`${agentLabel(session.agent??DEFAULT_AGENT)} menyusun kode adegan Remotion + Three.js dalam sesi yang sama.`);
  }else if(stageName==='render'){
   const t=timeline(),{visual,file}=picture();
   if(existingVideo(visual)){report(5,'Gambar final yang sama masih tersedia.',{render:{completed:t.durationInFrames,total:t.durationInFrames}});}

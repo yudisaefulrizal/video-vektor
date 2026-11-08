@@ -68,7 +68,7 @@ Setiap gaya adalah satu folder di `styles/` berisi `style.md` (nama, deskripsi, 
 ```bash
 npm run video -- "Penemuan mesin uap dan dampaknya"
 
-# Pilih agen AI (default dari AGENT di .env, lalu codex):
+# Pilih agen AI (default dari AGENT di .env, lalu claude):
 npm run video -- "Judul video" --agent claude
 
 # Pilih gaya visual (nama folder di styles/):
