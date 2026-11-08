@@ -102,3 +102,5 @@ function connect(){
 window.addEventListener('pagehide',()=>{clearTimeout(reconnect);if(socket){socket.onclose=null;socket.close();}});
 connect();
 api('/api/state').then(applyState).catch(error=>{connection(false);toast(error.message,true);$('queue-body').innerHTML='<tr><td colspan="4" class="empty-table">Koneksi terputus. Pastikan aplikasi masih berjalan.</td></tr>';});
+
+document.getElementById("theme-toggle")?.addEventListener("click",()=>{const r=document.documentElement,t=r.dataset.theme==="dark"?"light":"dark";r.dataset.theme=t;try{localStorage.setItem("theme",t)}catch{}});
