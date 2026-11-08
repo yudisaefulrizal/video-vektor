@@ -1,10 +1,11 @@
 # Gaya visual
 
-Setiap gaya adalah satu folder di sini. Nama folder adalah nama gaya, dan nama itu yang tampil di UI: huruf kecil, angka, dan tanda hubung, misalnya `stickman-spidol-vektor`. Gaya yang lengkap langsung muncul di pilihan **Gaya visual** pada UI dan bisa dipakai dengan `--style <id>`. Kode aplikasi tidak perlu diubah.
+Setiap gaya adalah satu folder di sini. Nama folder adalah nama gaya, dan nama itu yang tampil di UI: huruf kecil, angka, dan tanda hubung, misalnya `vektor-kucing`. Gaya yang lengkap langsung muncul di pilihan **Gaya visual** pada UI dan bisa dipakai dengan `--style <id>`. Kode aplikasi tidak perlu diubah.
 
 ```text
 styles/<id>/
 ├── style.md        # aturan gaya: definisi gaya yang dibaca agen
+├── referensi/      # (opsional) bahan sumber berlisensi terbuka yang ditunjuk style.md
 └── contoh/         # kode Remotion yang menerapkan aturan itu; disalin sebagai titik awal proyek
 ```
 
@@ -27,7 +28,7 @@ styles/<id>/
 1. Salin `_kerangka/` menjadi `styles/<id>/`. Kerangka hanya berisi format dan satu adegan kosong, tanpa tampilan gaya apa pun.
 2. Tulis `style.md` sebagai **aturan yang bisa diperiksa** (garis, warna, bentuk, karakter, kedalaman, teks, komposisi, hal yang dihindari). Templatnya ada di `_kerangka/style.md`.
 3. Bangun `contoh/` dari aturan itu. Mulai dari satu adegan, nilai dengan pertanyaan "apakah sudah mengikuti aturan?", lalu tambah adegan lain.
-4. Gambar dari luar boleh dipakai sebagai inspirasi suasana, tetapi bukan target yang harus disamai, dan tidak disimpan di folder gaya. Gambar lukisan tidak bisa direplikasi oleh bentuk kode. Yang dibawa ke gaya adalah aturannya.
+4. Gambar dari luar boleh dipakai sebagai inspirasi suasana, tetapi bukan target yang harus disamai. Bahan referensi yang berlisensi terbuka (aturan, laporan, cuplikan kecil) boleh disimpan di `styles/<id>/referensi/` dengan `README.md` yang mencatat asal dan lisensinya; `style.md` menunjuknya agar agen membacanya. Gambar lukisan tidak bisa direplikasi oleh bentuk kode. Yang dibawa ke gaya adalah aturannya.
 
 Gaya hanya tampil di UI bila `style.md` ada dan `contoh/` memiliki `index.ts` serta `Film.tsx`. Folder berawalan `_`, seperti `_kerangka`, tidak pernah tampil.
 
