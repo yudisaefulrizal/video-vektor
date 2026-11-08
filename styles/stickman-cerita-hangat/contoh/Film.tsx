@@ -7,7 +7,7 @@ import './style.css';
 
 // Required by the pipeline: `VisualFilm` (picture only) and `Film` (picture with audio), both driven
 // by timeline.json. Keep these two exports and the audio wiring; everything visual lives in Story.tsx.
-export const VisualFilm:React.FC=()=> <AbsoluteFill style={{fontFamily:'Lato',backgroundColor:'#F3EEE3'}}>
+export const VisualFilm:React.FC=()=> <AbsoluteFill style={{fontFamily:'Lato',backgroundColor:'#FFFFFF'}}>
  <style>{`@font-face {font-family: Lato; src: url("${staticFile('fonts/Lato-Regular.ttf')}"); font-weight: 400;} @font-face {font-family: Lato; src: url("${staticFile('fonts/Lato-Heavy.ttf')}"); font-weight: 900;}`}</style>
  {shots.map(shot=><Sequence key={shot.id} from={shot.from} durationInFrames={shot.duration} name={shot.action}><StoryShot shot={shot}/></Sequence>)}
 </AbsoluteFill>;

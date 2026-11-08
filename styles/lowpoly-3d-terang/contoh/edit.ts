@@ -6,6 +6,6 @@ import timeline from './timeline.json';
 export const at=(scene:number,seconds:number)=>timeline.scenes[scene].from+timeline.scenes[scene].audioLead+Math.round(seconds*timeline.fps);
 const cuts=[0,timeline.durationInFrames];
 const ids=['adegan'] as const;
-const actions=['Pulau low-poly naik dari laut: gunung, hutan, pondok berasap, perahu, awan, dan burung.'];
+const actions=['Adegan pertama.'];
 export const shots=ids.map((id,i)=>({id,from:cuts[i],duration:cuts[i+1]-cuts[i],action:actions[i]}));
 export type Shot=(typeof shots)[number];
