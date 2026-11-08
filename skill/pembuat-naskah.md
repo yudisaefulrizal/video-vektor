@@ -1,4 +1,3 @@
-
 # Hierarchical Dynamic Discourse Engagement Model (HDDEM)
 
 **Hierarchical Dynamic Discourse Engagement Model (HDDEM)** merupakan model matematis konseptual untuk memprediksi dan mengoptimalkan keterlibatan audiens terhadap wacana naratif, edukatif, argumentatif, dan informatif melalui integrasi perhatian awal, respons afektif, humor kontekstual, daya tarik informasi lokal, perkembangan konteks global, nilai marginal informasi, pemrosesan temporal multiskala, optimasi durasi, spesifikasi material visual, perkembangan keadaan visual, optimasi transisi antarmaterial, keselarasan multimodal, struktur narasi, dan koherensi wacana. Model ini mengintegrasikan optimasi narasi dan representasi visual secara hierarkis, dengan parameter yang memerlukan kalibrasi dan validasi empiris.
