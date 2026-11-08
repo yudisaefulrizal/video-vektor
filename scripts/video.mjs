@@ -28,5 +28,5 @@ if(!title&&!values.project&&['render','assemble'].includes(process.env.npm_lifec
   await runProject({title,timeoutSeconds,agent:values.agent,id:values.project??values.id,regenerate:!!values.regenerate,replan:!!values.replan,force:!!values.force,assembleOnly:!!values['assemble-only']});
  }catch(error){console.error(error.message);process.exitCode=1;}
 }else{
- console.error('Gunakan: npm run video -- "Judul video" [--agent codex|claude] atau npm run render -- --project <id>.');process.exitCode=1;
+ console.error('Gunakan: npm run video -- "Judul video" [--agent codex|claude|cline] atau npm run render -- --project <id>.');process.exitCode=1;
 }

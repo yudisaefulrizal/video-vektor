@@ -2,7 +2,7 @@ import {spawn} from 'node:child_process';
 import {readJson,writeJson,ROOT} from './pipeline.mjs';
 import {signalProcessTree} from './process-tree.mjs';
 
-export const AGENTS={codex:'Codex',claude:'Claude'};
+export const AGENTS={codex:'Codex',claude:'Claude',cline:'Cline'};
 export const DEFAULT_AGENT='codex';
 
 export function resolveAgent(value){
@@ -40,6 +40,28 @@ export function parseClaudeEvent(event){
  return actions;
 }
 
+const FILE_TOOL=/write|edit|replace|create|patch|apply|editor/i;
+export function parseClineEvent(event){
+ const actions=[];
+ if(event.type==='agent_event'){
+  const inner=event.event??{};
+  if(inner.type==='content_start'&&inner.contentType==='tool'){
+   const input=inner.input&&typeof inner.input==='object'?inner.input:{};
+   const command=input.command??(Array.isArray(input.commands)?input.commands.join('; '):undefined);
+   const file=input.path??input.file_path??input.filePath??input.absolutePath;
+   if(command)actions.push({activity:['command',firstLine(command,'Menjalankan langkah produksi.')]});
+   else if(file&&FILE_TOOL.test(String(inner.toolName??'')))actions.push({activity:['file',`Menulis ${fileName(file)}`]});
+  }
+  if(inner.type==='error'&&inner.recoverable===false)actions.push({failure:String(inner.error?.message??inner.message??'Sesi Cline terhenti.').slice(0,1500)});
+ }
+ if(event.type==='run_result'){
+  if(event.text?.trim())actions.push({activity:['message',String(event.text).slice(0,1200)]});
+  if(event.finishReason&&!['completed','aborted'].includes(event.finishReason))actions.push({failure:String(event.text||`Cline berhenti: ${event.finishReason}`).slice(0,1500)});
+ }
+ if(event.type==='error'&&event.message)actions.push({failure:String(event.message).slice(0,1500)});
+ return actions;
+}
+
 const providers={
  codex:{
   bin:()=>process.env.CODEX_BIN||'codex',
@@ -65,6 +87,21 @@ const providers={
   env:{ANTHROPIC_API_KEY:undefined,ANTHROPIC_AUTH_TOKEN:undefined},
   parse:parseClaudeEvent,
  },
+ cline:{
+  bin:()=>process.env.CLINE_BIN||'cline',
+  // Headless Cline cannot resume a session (--id only works interactively), so each run starts fresh;
+  // the script, code and audio saved in the project are still reused.
+  resumable:false,
+  args:()=>{
+   const args=['--json','--auto-approve','true','--cwd',ROOT];
+   if(process.env.CLINE_PROVIDER)args.push('--provider',process.env.CLINE_PROVIDER);
+   if(process.env.CLINE_MODEL)args.push('--model',process.env.CLINE_MODEL);
+   return args;
+  },
+  // Cline uses the provider configured with `cline auth`.
+  env:{},
+  parse:parseClineEvent,
+ },
 };
 
 // Sessions are stored per agent; a Codex thread cannot be resumed by Claude and vice versa.
@@ -78,6 +115,7 @@ export function runAgentSession({agent=DEFAULT_AGENT,p,prompt,signal,env,onActiv
  return new Promise((resolve,reject)=>{
   const child=spawn(provider.bin(),args,{cwd:ROOT,env:{...process.env,...env,...provider.env},stdio:['pipe','pipe','pipe']});
   let buffer='',stderr='',failure=null;
+  if(provider.resumable===false)onActivity('session',`Sesi ${label} dimulai (sesi baru setiap kali dijalankan).`);
   const accept=line=>{
    let event;try{event=JSON.parse(line);}catch{return;}
    for(const action of provider.parse(event)){
