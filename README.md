@@ -1,6 +1,6 @@
 # Video Vektor
 
-Judul → naskah → narasi → kode animasi Remotion + Three.js → video final. Produksi memakai satu sesi Codex CLI per proyek, dengan cara pembuatan adegan yang mengacu pada video kucing yang sudah disetujui. Codex menulis ilustrasi, aksi objek, kamera, dan perpindahan adegan langsung dalam kode.
+Judul → naskah → narasi → kode animasi Remotion + Three.js → video final. Produksi memakai satu sesi agen AI per proyek, Codex CLI atau Claude Code CLI, dengan cara pembuatan adegan yang mengacu pada video kucing yang sudah disetujui. Agen menulis ilustrasi, aksi objek, kamera, dan perpindahan adegan langsung dalam kode.
 
 ## Studio
 
@@ -13,10 +13,11 @@ Buka **http://localhost:8077**. `npm run dev` membuka aplikasi yang sama; port b
 Server internal renderer memakai port **8078**, terpisah dari port 3000 yang dapat dipakai dan dibersihkan otomatis oleh bridge WhatsApp Hermes. Pengaturan ini ada di `remotion.config.ts`.
 
 - Masukkan judul, pilih mulai sekarang atau jadwalkan dalam WIB.
-- Pantau tahap produksi, aktivitas sesi Codex, dan jumlah frame selesai melalui **WebSocket**.
+- Pilih **Agen AI** (Codex atau Claude) untuk setiap video.
+- Pantau tahap produksi, aktivitas sesi agen, dan jumlah frame selesai melalui **WebSocket**.
 - Atur **Timeout (menit)** sebelum mulai atau ubah dan simpan saat pekerjaan berjalan. **0 berarti tanpa batas**. Batas dihitung sejak pekerjaan dimulai; tidak ada batas tetap 20 menit atau batas maksimum lain dari aplikasi.
 - Tekan **Stop** untuk menghentikan pekerjaan beserta proses turunannya. Jika proses belum keluar, tersedia **Paksa Stop**. Pekerjaan yang dihentikan tidak diulang otomatis.
-- Gunakan **Lanjutkan** jika ingin meneruskan secara manual. Naskah, sesi Codex, kode, dan audio dipakai kembali. Render yang terputus dimulai ulang dari awal.
+- Gunakan **Lanjutkan** jika ingin meneruskan secara manual. Naskah, sesi agen, kode, dan audio dipakai kembali. Render yang terputus dimulai ulang dari awal.
 - Putar atau unduh hasil melalui halaman **Hasil**.
 - **Hapus** menghapus seluruh proyek: antrean, video, audio, naskah, kode proyek, cache, dan temporary directory milik proyek. Proses berjalan beserta turunannya dihentikan sebelum berkas dibersihkan. Konfirmasi menyebutkan bahwa seluruh berkas proyek akan dihapus.
 
@@ -24,7 +25,7 @@ Antrean dan jadwal tersimpan di `.cache/video-pipeline/studio/jobs.json`. Jadwal
 
 ## Persiapan
 
-Memerlukan Node.js 22+, Codex CLI yang sudah login melalui akun ChatGPT, Google Chrome, Python 3, dan FFmpeg/ffprobe.
+Memerlukan Node.js 22+, minimal satu agen AI yang sudah login (Codex CLI dengan akun ChatGPT, atau Claude Code CLI dengan langganan Claude), Google Chrome, Python 3, dan FFmpeg/ffprobe.
 
 ```bash
 git clone https://github.com/yudisaefulrizal/video-vektor.git
@@ -32,18 +33,22 @@ cd video-vektor
 npm ci
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-codex login
+codex login                                  # jika memakai Codex
+npm install -g @anthropic-ai/claude-code     # jika memakai Claude
+claude login
 ```
 
-Pipeline menggunakan login ChatGPT yang tersimpan di Codex CLI, tanpa API key atau model gambar. Model mengikuti konfigurasi CLI. `.env.example` memuat pengaturan opsional untuk executable/model Codex, suara narasi, port, dan renderer. Browser dikonfigurasi di `remotion.config.ts` (`/usr/bin/google-chrome`).
+Pipeline menggunakan login yang tersimpan di CLI (ChatGPT untuk Codex, langganan Claude untuk Claude Code), tanpa API key atau model gambar; `OPENAI_API_KEY`/`ANTHROPIC_API_KEY` sengaja diabaikan. Model mengikuti konfigurasi CLI. `.env.example` memuat pengaturan opsional untuk agen bawaan (`AGENT`), executable/model Codex dan Claude, suara narasi, port, dan renderer. Browser dikonfigurasi di `remotion.config.ts` (`/usr/bin/google-chrome`).
+
+Catatan keamanan: Codex berjalan dalam sandbox `workspace-write`. Claude Code CLI tidak memakai sandbox OS; ia hanya dibatasi pada alat `Bash, Read, Edit, MultiEdit, Write, Glob, Grep`, dan Bash dapat menjalankan perintah apa pun sebagai pengguna Anda.
 
 ## Alur produksi
 
 1. Membuat folder proyek berdasarkan judul.
-2. Dalam satu sesi Codex, membaca `skill/pembuat-naskah.md` dan menyimpan hasilnya ke `hasil/<id>/naskah.json`. Skill tidak diedit.
+2. Dalam satu sesi agen, membaca `skill/pembuat-naskah.md` dan menyimpan hasilnya ke `hasil/<id>/naskah.json`. Skill tidak diedit.
 3. Menjalankan helper audio yang sudah ada untuk narasi, timing kata, transkrip audio SRT, dan musik.
 4. Melanjutkan sesi yang sama untuk menulis kode adegan berdasarkan naskah dan timing, memakai sumber video kucing sebagai acuan. Setiap proyek memiliki sumber Remotion sendiri.
-5. Setelah Codex menyiapkan kode, proses utama aplikasi merender seluruh durasi video dalam satu pemanggilan Remotion. Progres frame tetap dikirim ke UI melalui WebSocket.
+5. Setelah agen menyiapkan kode, proses utama aplikasi merender seluruh durasi video dalam satu pemanggilan Remotion. Progres frame tetap dikirim ke UI melalui WebSocket.
 6. Menggabungkan gambar dan audio, menyimpan enam berkas final, lalu membersihkan file sementara.
 
 Tidak ada pemanggilan AI terpisah untuk arahan, setiap kelompok aset, atau setiap kelompok gerakan. Jalur produksi baru tidak memakai kontrak JSON animasi, DSL gerakan, atau batas buatan jumlah entity/shot. Tahap pada UI adalah laporan pekerjaan dalam sesi yang sama.
@@ -56,6 +61,9 @@ Pipeline tidak otomatis menjalankan typecheck, pengujian, render sampel, storybo
 
 ```bash
 npm run video -- "Penemuan mesin uap dan dampaknya"
+
+# Pilih agen AI (default dari AGENT di .env, lalu codex):
+npm run video -- "Judul video" --agent claude
 
 # Lanjutkan proyek memakai naskah, sesi, kode, dan audio yang tersimpan:
 npm run render -- --project penemuan-mesin-uap-dan-dampaknya
@@ -104,7 +112,7 @@ Audio berupa WAV stereo 48 kHz. `narasi.wav` berisi suara bersih pada timing vid
 
 Kode animasi tiap video disimpan permanen di `hasil/<id>/source/`, terpisah dari kode video lain dan berdampingan dengan naskah serta hasil finalnya. Render, preview, dan perbaikan kode memakai folder ini. Kode tetap tersedia saat produksi gagal maupun setelah pembersihan cache. Kode proyek lama di `.cache/video-pipeline/projects/<id>/source/` otomatis dipindahkan saat proyek dilanjutkan atau perintah preview/still dijalankan; folder source yang sudah ada di hasil tidak ditimpa.
 
-Timeline kerja, cache audio, ID sesi Codex, dan cache gambar video yang sudah selesai dirender tetap berada di `.cache/video-pipeline/projects/<id>/`. Salinan timeline untuk kompilasi animasi berada di `source/timeline.json`. Cache ini dipertahankan untuk melanjutkan pekerjaan tanpa membuat ulang bagian yang sudah tersedia. Hasil proyek lama tetap dapat dibuka dari UI. Folder `hasil/` dan `.cache/` tetap diabaikan Git; repositori menyimpan kode pipeline, bukan hasil produksi lokal.
+Timeline kerja, cache audio, ID sesi agen (terpisah untuk Codex dan Claude), dan cache gambar video yang sudah selesai dirender tetap berada di `.cache/video-pipeline/projects/<id>/`. Salinan timeline untuk kompilasi animasi berada di `source/timeline.json`. Cache ini dipertahankan untuk melanjutkan pekerjaan tanpa membuat ulang bagian yang sudah tersedia. Hasil proyek lama tetap dapat dibuka dari UI. Folder `hasil/` dan `.cache/` tetap diabaikan Git; repositori menyimpan kode pipeline, bukan hasil produksi lokal.
 
 Jika produksi gagal, **Detail** menampilkan pesan kegagalan dan progres terakhir. Log render/penggabungan terbaru tersimpan di `.cache/video-pipeline/projects/<id>/production.log`; kegagalan helper juga dicatat ke `failure.json` di folder yang sama. Log tetap tersedia setelah file sementara dibersihkan.
 
@@ -131,8 +139,8 @@ Perintah ini hanya berjalan bila dipanggil. Preview/poster masuk folder laporan 
 ## Bagian kode
 
 - `scripts/run-project.mjs`: membuka atau melanjutkan satu sesi produksi dan membaca kontrol pengguna.
-- `scripts/lib/codex-session.mjs`: menjalankan Codex CLI dan meneruskan aktivitas operasionalnya.
-- `scripts/session-step.mjs`: helper audio yang dipanggil sesi Codex, serta render dan penyimpanan hasil yang dijalankan proses utama.
+- `scripts/lib/agent-session.mjs`: menjalankan Codex CLI atau Claude Code CLI dan meneruskan aktivitas operasionalnya.
+- `scripts/session-step.mjs`: helper audio yang dipanggil sesi agen, serta render dan penyimpanan hasil yang dijalankan proses utama.
 - `scripts/lib/studio-store.mjs`: antrean, jadwal, Stop, dan pengaturan timeout.
 - `scripts/studio-server.mjs` dan `studio/`: UI lokal, API kontrol, dan WebSocket status.
 - `scripts/lib/pipeline.mjs`: cache, lock, proses, publish, dan cleanup yang sudah ada.

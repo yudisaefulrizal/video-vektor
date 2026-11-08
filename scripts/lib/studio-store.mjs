@@ -6,6 +6,7 @@ import {ROOT,FINAL_FILES,acquireLock,paths,readJson,writeJson} from './pipeline.
 import {projectSlug} from './project.mjs';
 import {signalProcessTree,waitForProcesses} from './process-tree.mjs';
 import {failureDetails} from './process-output.mjs';
+import {AGENTS,DEFAULT_AGENT,resolveAgent} from './agent-session.mjs';
 
 export const STEPS=['Folder proyek','Naskah','Narasi','Kode animasi','Render video','Gabungkan audio','Simpan & bersihkan'];
 const isActive=job=>['running','stopping'].includes(job.state);
@@ -19,7 +20,7 @@ export class StudioStore{
   this.root=root;this.now=now;this.base=path.join(root,'.cache/video-pipeline');
   this.file=path.join(this.base,'studio/jobs.json');
   this.jobs=read(this.file,[]);if(!Array.isArray(this.jobs))throw new Error('Data antrean studio tidak valid.');
-  this.launch=launch??(job=>spawn(process.execPath,[path.join(ROOT,'scripts/video.mjs'),'--title',job.title,'--id',job.projectId,'--timeout',String(job.timeoutSeconds??0)],{cwd:root,env:{...process.env,PIPELINE_JOB_ID:job.id},stdio:['ignore','pipe','pipe'],detached:false}));
+  this.launch=launch??(job=>spawn(process.execPath,[path.join(ROOT,'scripts/video.mjs'),'--title',job.title,'--id',job.projectId,'--timeout',String(job.timeoutSeconds??0),...(job.agent?['--agent',job.agent]:[])],{cwd:root,env:{...process.env,PIPELINE_JOB_ID:job.id},stdio:['ignore','pipe','pipe'],detached:false}));
   this.closing=false;this.child=null;this.deleting=new Set();
  }
  save(){writeJson(this.file,this.jobs);}
@@ -43,10 +44,11 @@ export class StudioStore{
  }
  timeout(value){const seconds=Number(value??0);if(!Number.isFinite(seconds)||seconds<0)throw new StudioError('Timeout harus angka positif atau 0 untuk tanpa batas.');return seconds;}
  controlFile(projectId){return path.join(this.base,'projects',projectId,'control.json');}
- create({title,scheduledAt,timeoutSeconds=0}={}){
+ agent(value){try{return resolveAgent(value);}catch(error){throw new StudioError(error.message);}}
+ create({title,scheduledAt,timeoutSeconds=0,agent}={}){
   const source=this.validateTitle(title),when=this.schedule(scheduledAt);
   if(this.jobs.some(job=>job.projectId===source.projectId&&(pending(job)||isActive(job))))throw new StudioError('Proyek ini sudah ada dalam antrean atau sedang diproses.',409);
-  const job={id:randomUUID(),...source,timeoutSeconds:this.timeout(timeoutSeconds),scheduledAt:when,state:when?'scheduled':'queued',createdAt:new Date(this.now()).toISOString(),startedAt:null,finishedAt:null,pid:null,error:null};
+  const job={id:randomUUID(),...source,timeoutSeconds:this.timeout(timeoutSeconds),agent:this.agent(agent),scheduledAt:when,state:when?'scheduled':'queued',createdAt:new Date(this.now()).toISOString(),startedAt:null,finishedAt:null,pid:null,error:null};
   this.jobs.push(job);this.save();return job;
  }
  get(id){const job=this.jobs.find(job=>job.id===id);if(!job)throw new StudioError('Pekerjaan tidak ditemukan.',404);return job;}
@@ -158,7 +160,7 @@ export class StudioStore{
   if(running){const status=this.progress(running.projectId);active={...running,progress:status?.pid===running.pid?status:null};}
   else active=this.external();
   const latest=this.jobs.filter(job=>job.state==='completed').at(-1);
-  return {steps:STEPS,active,lastCompleted:latest??null,jobs:this.jobs,results:this.results(),timezone:'Asia/Jakarta'};
+  return {steps:STEPS,active,lastCompleted:latest??null,jobs:this.jobs,results:this.results(),agents:AGENTS,defaultAgent:(()=>{try{return resolveAgent();}catch{return DEFAULT_AGENT;}})(),timezone:'Asia/Jakarta'};
  }
  start(){this.tick();this.timer=setInterval(()=>this.tick(),1000);}
  tick(){
