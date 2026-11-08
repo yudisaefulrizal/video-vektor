@@ -1,0 +1,58 @@
+{
+  "fps": 30,
+  "durationInFrames": 840,
+  "scenes": [
+    {
+      "audio_text": "Pernahkah kamu bingung memilih antara kata hati dan logika?",
+      "motion_description": "Dua orang mengobrol di meja kafe; gelembung pikiran berisi tanda tanya muncul, lalu salah satunya berjalan pergi.",
+      "index": 0,
+      "from": 0,
+      "durationInFrames": 210,
+      "audioLead": 12,
+      "audioDuration": 5.5,
+      "audioTrimStart": 2,
+      "audioTrimEnd": 167,
+      "audioRawDuration": 5.8,
+      "captions": []
+    },
+    {
+      "audio_text": "Kita biasanya membandingkan pilihan lewat daftar kelebihannya.",
+      "motion_description": "Dua potret pilihan dengan daftar centang muncul satu per satu, panah mengarah ke orang yang sedang berpikir.",
+      "index": 1,
+      "from": 210,
+      "durationInFrames": 210,
+      "audioLead": 0,
+      "audioDuration": 5.5,
+      "audioTrimStart": 2,
+      "audioTrimEnd": 167,
+      "audioRawDuration": 5.8,
+      "captions": []
+    },
+    {
+      "audio_text": "Otak menimbang alasan, sementara hati menimbang rasa.",
+      "motion_description": "Ikon otak dan hati jatuh ke dua piring timbangan; timbangan bergoyang ke kiri dan kanan.",
+      "index": 2,
+      "from": 420,
+      "durationInFrames": 210,
+      "audioLead": 0,
+      "audioDuration": 5.5,
+      "audioTrimStart": 2,
+      "audioTrimEnd": 167,
+      "audioRawDuration": 5.8,
+      "captions": []
+    },
+    {
+      "audio_text": "Keputusan terbaik lahir ketika keduanya seimbang.",
+      "motion_description": "Timbangan berhenti seimbang, mahkota dan kilau muncul, tokoh tersenyum lega.",
+      "index": 3,
+      "from": 630,
+      "durationInFrames": 210,
+      "audioLead": 0,
+      "audioDuration": 5.5,
+      "audioTrimStart": 2,
+      "audioTrimEnd": 167,
+      "audioRawDuration": 5.8,
+      "captions": []
+    }
+  ]
+}

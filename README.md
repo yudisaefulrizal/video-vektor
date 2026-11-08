@@ -1,6 +1,6 @@
 # Video Vektor
 
-Judul → naskah → narasi → kode animasi Remotion + Three.js → video final. Produksi memakai satu sesi agen AI per proyek, Codex CLI, Claude Code CLI, atau Cline CLI, dengan cara pembuatan adegan yang mengacu pada video kucing yang sudah disetujui. Agen menulis ilustrasi, aksi objek, kamera, dan perpindahan adegan langsung dalam kode.
+Judul → naskah → narasi → kode animasi Remotion + Three.js → video final. Produksi memakai satu sesi agen AI per proyek, Codex CLI, Claude Code CLI, atau Cline CLI, dengan cara pembuatan adegan yang mengacu pada contoh kode gaya visual terpilih (bawaan: video kucing yang sudah disetujui). Agen menulis ilustrasi, aksi objek, kamera, dan perpindahan adegan langsung dalam kode.
 
 ## Studio
 
@@ -13,7 +13,7 @@ Buka **http://localhost:8077**. `npm run dev` membuka aplikasi yang sama; port b
 Server internal renderer memakai port **8078**, terpisah dari port 3000 yang dapat dipakai dan dibersihkan otomatis oleh bridge WhatsApp Hermes. Pengaturan ini ada di `remotion.config.ts`.
 
 - Masukkan judul, pilih mulai sekarang atau jadwalkan dalam WIB.
-- Pilih **Agen AI** (Codex, Claude, atau Cline) untuk setiap video.
+- Pilih **Agen AI** (Codex, Claude, atau Cline) dan **Gaya visual** untuk setiap video.
 - Pantau tahap produksi, aktivitas sesi agen, dan jumlah frame selesai melalui **WebSocket**.
 - Atur **Timeout (menit)** sebelum mulai atau ubah dan simpan saat pekerjaan berjalan. **0 berarti tanpa batas**. Batas dihitung sejak pekerjaan dimulai; tidak ada batas tetap 20 menit atau batas maksimum lain dari aplikasi.
 - Tekan **Stop** untuk menghentikan pekerjaan beserta proses turunannya. Jika proses belum keluar, tersedia **Paksa Stop**. Pekerjaan yang dihentikan tidak diulang otomatis.
@@ -49,7 +49,7 @@ Catatan keamanan: Codex berjalan dalam sandbox `workspace-write`. Claude Code CL
 1. Membuat folder proyek berdasarkan judul.
 2. Dalam satu sesi agen, membaca `skill/pembuat-naskah.md` dan menyimpan hasilnya ke `hasil/<id>/naskah.json`. Skill tidak diedit.
 3. Menjalankan helper audio yang sudah ada untuk narasi, timing kata, transkrip audio SRT, dan musik.
-4. Melanjutkan sesi yang sama untuk menulis kode adegan berdasarkan naskah dan timing, memakai sumber video kucing sebagai acuan. Setiap proyek memiliki sumber Remotion sendiri.
+4. Melanjutkan sesi yang sama untuk menulis kode adegan berdasarkan naskah dan timing, memakai contoh kode gaya visual terpilih (`styles/<gaya>/contoh/`) sebagai acuan dan titik awal. Setiap proyek memiliki sumber Remotion sendiri dan menyimpan gayanya.
 5. Setelah agen menyiapkan kode, proses utama aplikasi merender seluruh durasi video dalam satu pemanggilan Remotion. Progres frame tetap dikirim ke UI melalui WebSocket.
 6. Menggabungkan gambar dan audio, menyimpan enam berkas final, lalu membersihkan file sementara.
 
@@ -59,6 +59,10 @@ Video baru memakai narasi untuk menjelaskan dan animasi untuk memperlihatkan. Ad
 
 Pipeline tidak otomatis menjalankan typecheck, pengujian, render sampel, storyboard, atau perencanaan ulang berdasarkan penilaian visual. Metadata dan kelengkapan video utuh tetap diperiksa untuk penggabungan dan penyimpanan. Pemeriksaan kualitas cerita dan gerakan dilakukan pengguna pada video final.
 
+## Gaya visual
+
+Setiap gaya adalah satu folder di `styles/` berisi `style.md` (nama, deskripsi, panduan untuk agen) dan `contoh/` (contoh kode Remotion yang disalin sebagai titik awal proyek). Gaya baru langsung muncul di UI tanpa mengubah kode. Gaya baru dimulai dari kerangka netral `styles/_kerangka/` (format saja) dan didefinisikan lewat aturan di `style.md`, bukan dengan meniru gaya lain. Panduan lengkap ada di [`styles/README.md`](styles/README.md). Gaya bawaan diatur dengan `STYLE` di `.env`.
+
 ## Terminal
 
 ```bash
@@ -66,6 +70,9 @@ npm run video -- "Penemuan mesin uap dan dampaknya"
 
 # Pilih agen AI (default dari AGENT di .env, lalu codex):
 npm run video -- "Judul video" --agent claude
+
+# Pilih gaya visual (nama folder di styles/):
+npm run video -- "Judul video" --style vektor-kucing
 
 # Lanjutkan proyek memakai naskah, sesi, kode, dan audio yang tersimpan:
 npm run render -- --project penemuan-mesin-uap-dan-dampaknya
@@ -136,7 +143,7 @@ npm run render:preview -- --project judul-video
 npm run still -- --project judul-video
 ```
 
-Perintah ini hanya berjalan bila dipanggil. Preview/poster masuk folder laporan di cache. Perintah review/storyboard berbasis rencana JSON lama tetap khusus proyek lama. Sumber video kucing di `src/` dan hasil yang sudah ada tidak diubah oleh produksi judul baru.
+Perintah ini hanya berjalan bila dipanggil. Preview/poster masuk folder laporan di cache. Perintah review/storyboard berbasis rencana JSON lama tetap khusus proyek lama. Sumber video kucing di `styles/vektor-kucing/contoh/` dan hasil yang sudah ada tidak diubah oleh produksi judul baru.
 
 ## Bagian kode
 
@@ -146,6 +153,7 @@ Perintah ini hanya berjalan bila dipanggil. Preview/poster masuk folder laporan 
 - `scripts/lib/studio-store.mjs`: antrean, jadwal, Stop, dan pengaturan timeout.
 - `scripts/studio-server.mjs` dan `studio/`: UI lokal, API kontrol, dan WebSocket status.
 - `scripts/lib/pipeline.mjs`: cache, lock, proses, publish, dan cleanup yang sudah ada.
-- `src/Story.tsx`, `src/edit.ts`, `src/Film.tsx`, `src/components/`: sumber video kucing sebagai acuan produksi.
+- `styles/<gaya>/`: panduan (`style.md`) dan contoh kode (`contoh/`) setiap gaya visual. `styles/vektor-kucing/contoh/` adalah sumber video kucing yang disetujui. `styles/_kerangka/` berisi format wajib tanpa tampilan gaya apa pun, sebagai titik awal gaya baru. Lihat `styles/README.md` untuk menambah gaya.
+- `src/generic/`: renderer lama untuk proyek berbasis rencana JSON.
 
 Font disertakan beserta lisensinya. Audio, video, cache, dan antrean lokal tidak diunggah ke repositori. Ilustrasi dibuat sendiri; aset Kurzgesagt tidak digunakan.

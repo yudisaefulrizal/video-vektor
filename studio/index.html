@@ -30,6 +30,7 @@
             <p id="timing-help" class="timing-help">Video akan diproses segera, atau menunggu giliran jika ada proses lain.</p>
             <div class="timeout-field"><label for="timeout-minutes">Timeout (menit)</label><input id="timeout-minutes" name="timeout" type="number" min="0" step="any" value="0" required aria-describedby="timeout-hint"><p id="timeout-hint">0 = tanpa batas. Bisa diubah saat proses berjalan.</p></div>
             <div class="agent-field"><label for="agent">Agen AI</label><select id="agent" name="agent" aria-describedby="agent-hint"><option value="codex">Codex</option><option value="claude">Claude</option><option value="cline">Cline</option></select><p id="agent-hint">Memakai login CLI masing-masing, tanpa API key.</p></div>
+            <div class="agent-field"><label for="style">Gaya visual</label><select id="style" name="style" aria-describedby="style-hint"></select><p id="style-hint">Gaya baru ditambahkan sebagai folder di styles/.</p></div>
             <p id="form-error" class="form-error" role="alert" hidden></p>
             <button id="submit-button" class="button button-primary submit-button" type="submit"><span id="submit-label">Buat video</span><span data-icon="arrow-right"></span></button>
           </form>
