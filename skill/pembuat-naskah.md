@@ -1,56 +1,128 @@
 
-**Hierarchical Dynamic Discourse Engagement Model (HDDEM)** merupakan model matematis konseptual yang dirancang untuk memprediksi dan mengoptimalkan keterlibatan audiens terhadap berbagai bentuk wacana sekaligus menghasilkan representasi visual yang selaras dengan narasi audio melalui integrasi mekanisme perhatian awal, daya tarik informasi lokal, perkembangan konteks global, nilai marginal informasi, respons afektif, humor kontekstual, pemrosesan temporal multiskala, optimasi durasi penyampaian, pemilihan teks kunci, dan perancangan deskripsi motion.
+# Hierarchical Dynamic Discourse Engagement Model (HDDEM)
 
-Model diawali dengan komponen **Initial Engagement** menggunakan rumus H(k) = exp(-η(k-1)) × (αQ(k) + βD(k) + γR(k) + δA(k)), yang mengukur kemampuan unit informasi awal dalam membangkitkan perhatian berdasarkan kesenjangan informasi Q(k), ketidaksesuaian ekspektasi D(k), relevansi terhadap audiens R(k), dan intensitas emosional A(k), dengan koefisien pengaruh α, β, γ, δ serta parameter peluruhan posisi η. Setelah hook, model menyisipkan transisi retoris singkat yang sesuai dengan karakter pembukaan, seperti "Yuk, kita telusuri", "Benarkah?", atau ungkapan sejenis yang menghubungkan rasa penasaran audiens dengan pembahasan berikutnya. Transisi dipilih secara kontekstual agar terasa alami, tidak mengulang informasi, dan tidak mengurangi ketegangan yang telah dibangun. Setelah transisi, diberikan jeda singkat sebagai bagian dari pengaturan temporal untuk memberikan ruang pemrosesan dan membangun antisipasi sebelum ajakan subscribe. Ajakan subscribe ditempatkan secara ringkas setelah jeda tersebut, kemudian diberikan jeda tambahan sekitar 0,4–0,8 detik sebelum narasi memasuki pembahasan utama tanpa pengantar tambahan yang bertele-tele.
+**Hierarchical Dynamic Discourse Engagement Model (HDDEM)** merupakan model matematis konseptual untuk memprediksi dan mengoptimalkan keterlibatan audiens terhadap wacana naratif, edukatif, argumentatif, dan informatif melalui integrasi perhatian awal, respons afektif, humor kontekstual, daya tarik informasi lokal, perkembangan konteks global, nilai marginal informasi, pemrosesan temporal multiskala, optimasi durasi, spesifikasi material visual, perkembangan keadaan visual, optimasi transisi antarmaterial, keselarasan multimodal, struktur narasi, dan koherensi wacana. Model ini mengintegrasikan optimasi narasi dan representasi visual secara hierarkis, dengan parameter yang memerlukan kalibrasi dan validasi empiris.
 
-Selanjutnya, komponen **Affective Engagement** dirumuskan sebagai F(k) = Σ[i=1 hingga n] v(i)e(i,k) + Σ[i<j] κ(i,j)e(i,k)e(j,k), dengan e(i,k) sebagai intensitas dimensi afektif ke-i pada unit informasi ke-k, meliputi kesenangan, kekaguman, empati, ketegangan, dan kepuasan, v(i) sebagai bobot pengaruh setiap dimensi, serta κ(i,j) sebagai koefisien interaksi antardimensi afektif.
+## Formulasi Matematis
 
-Untuk mengoptimalkan kontribusi humor secara lebih spesifik, model menambahkan komponen **Contextual Humor Engagement** melalui rumus Hᵤ(k) = αₕIₕ(k) + βₕRₕ(k) + γₕCₕ(k) + δₕTₕ(k) - λₕDₕ(k) - μₕPₕ(k), dengan Iₕ(k) sebagai tingkat ketidaksesuaian lucu antara ekspektasi dan kenyataan, Rₕ(k) sebagai tingkat keterpahaman atau penyelesaian ketidaksesuaian yang menghasilkan kelucuan, Cₕ(k) sebagai relevansi humor terhadap konteks pembahasan, Tₕ(k) sebagai ketepatan penempatan humor dalam perkembangan narasi, Dₕ(k) sebagai tingkat gangguan humor terhadap pemahaman informasi utama, dan Pₕ(k) sebagai risiko ketidaksesuaian humor terhadap karakter materi, sensitivitas topik, atau karakteristik audiens. Koefisien αₕ, βₕ, γₕ, δₕ, λₕ, dan μₕ menentukan kontribusi relatif masing-masing faktor.
+**1. Initial Engagement**
 
-Humor diperlakukan sebagai mekanisme keterlibatan yang bersifat adaptif dan opsional, bukan kewajiban pada setiap unit informasi, sehingga model dapat memilih humor ringan, ironi, analogi jenaka, pembalikan ekspektasi, atau situasi visual yang menggelitik ketika memberikan nilai tambahan terhadap perhatian dan pemahaman, serta meniadakannya ketika berpotensi mengurangi ketepatan informasi, merusak suasana emosional, atau mengganggu kesinambungan wacana. Kontribusi humor terhadap respons afektif diperhitungkan secara terpisah untuk menghindari penghitungan ganda dalam proses optimasi.
+H(k) = exp(−η(k−1)) × (αQ(k) + βD(k) + γR(k) + δA(k))
 
-Setiap unit informasi ke-k yang direpresentasikan sebagai X(k) kemudian dianalisis menggunakan fungsi L(k) = fθ(X(k), S(k-1), F(k), Hᵤ(k)) untuk menghasilkan daya tarik lokal berdasarkan kondisi kontekstual sebelumnya S(k-1), kontribusi afektif F(k), dan kontribusi humor kontekstual Hᵤ(k). Nilai marginal informasi dihitung melalui M(k) = ΔV(k) - ρU(k), dengan ΔV(k) sebagai peningkatan nilai informasi atau pemahaman yang dihasilkan unit ke-k, U(k) sebagai tingkat redundansi terhadap informasi sebelumnya, dan ρ sebagai koefisien penalti redundansi.
+H(k) = keterlibatan awal; k = indeks unit informasi; Q(k) = kesenjangan informasi; D(k) = ketidaksesuaian ekspektasi; R(k) = relevansi audiens; A(k) = intensitas emosional; α, β, γ, δ = koefisien pengaruh; η = parameter peluruhan posisi.
 
-Kondisi kontekstual diperbarui secara dinamis melalui S(k) = Fφ(S(k-1), X(k), L(k), M(k), F(k), Hᵤ(k)), kemudian dipetakan menggunakan G(k) = gφ(S(k)) untuk menghasilkan keterlibatan kontekstual global.
+**2. Affective Engagement**
 
-Seluruh komponen lokal, global, marginal, afektif, dan humor selanjutnya diintegrasikan melalui fungsi temporal multiskala dengan rumus E(t) = sigmoid(b + Σ[j=1 hingga m] w(j) × Tτ(j)(L, G, M, F, Hᵤ, t) + ωH(t)), dengan E(t) sebagai prediksi keterlibatan audiens pada waktu t dalam rentang 0 hingga 1, b sebagai bias, m sebagai jumlah jendela temporal, w(j) sebagai bobot setiap jendela, Tτ(j) sebagai fungsi integrasi informasi pada jendela berdurasi τ(j), serta ω sebagai bobot kontribusi perhatian awal H(t) yang dipetakan dari posisi unit informasi ke waktu penyampaiannya.
+F(k) = Σ[i=1 hingga n] v(i)e(i,k) + Σ[i<j] κ(i,j)e(i,k)e(j,k)
 
-Integrasi ini mempertimbangkan distribusi informasi, perkembangan emosi, variasi humor, serta kesinambungan konteks dalam berbagai skala waktu, sehingga humor tidak ditempatkan secara berlebihan atau berulang dengan pola yang mudah diprediksi. Pengaturan temporal juga mencakup jeda setelah transisi retoris, jeda setelah ajakan subscribe, jeda antargagasan ketika diperlukan, serta penyesuaian ritme penyampaian agar audiens memiliki kesempatan memproses informasi tanpa kehilangan kesinambungan narasi. Jeda tidak diperlakukan sebagai kalimat narasi, melainkan sebagai interval waktu yang dapat disertai keberlanjutan animasi atau perubahan visual yang relevan.
+F(k) = kontribusi afektif; e(i,k) = intensitas dimensi afektif ke-i pada unit ke-k; n = jumlah dimensi afektif; v(i) = bobot dimensi afektif; κ(i,j) = koefisien interaksi antardimensi. Dimensi afektif mencakup kesenangan, kekaguman, empati, ketegangan, dan kepuasan.
 
-Durasi optimal ditentukan melalui fungsi T* = argmax[T ∈ D] {∫[0 hingga T] E(t)dt - λT + μC(T) - ξU(T)}, dengan T* sebagai durasi optimal, D sebagai himpunan kandidat durasi, λ sebagai koefisien penalti durasi, C(T) sebagai tingkat kelengkapan informasi berbobot μ, serta U(T) sebagai redundansi kumulatif berbobot ξ. Optimasi ini bertujuan menentukan panjang penyampaian yang memberikan keseimbangan terbaik antara keterlibatan audiens, perkembangan pemahaman, pengalaman emosional, variasi humor, kelengkapan informasi, dan efisiensi waktu tanpa memperpanjang wacana secara berlebihan. Durasi transisi retoris, jeda, dan ajakan subscribe turut diperhitungkan dalam durasi keseluruhan sehingga tidak mengurangi efisiensi penyampaian materi utama secara berlebihan.
+**3. Contextual Humor Engagement**
 
-Setelah narasi dioptimalkan, setiap unit informasi X(k) dipertahankan sebagai satu kalimat lengkap dalam komponen audio_text dan diproses melalui **Key Text Selection Model** untuk menghasilkan teks kunci Y(k) yang berfungsi sebagai jangkar semantik bagi audiens, bukan sebagai pengulangan transkrip audio. Pemilihan teks kunci dirumuskan melalui Y*(k) = argmax[Y ∈ Ω(k)] {aS(Y,X(k)) + cK(Y,S(k)) + dR(Y) + eA(Y) - pB(Y) - qD(Y,X(k))}, dengan Ω(k) sebagai himpunan kandidat teks kunci termasuk kemungkinan tanpa teks, S(Y,X(k)) sebagai kesesuaian semantik antara teks kunci dan narasi, K(Y,S(k)) sebagai kontribusi terhadap kejelasan konsep dalam konteks wacana, R(Y) sebagai relevansi terhadap gagasan utama, A(Y) sebagai kemampuan teks membangun perhatian, B(Y) sebagai beban membaca yang mempertimbangkan panjang teks dan waktu tampil, D(Y,X(k)) sebagai tingkat duplikasi verbal yang tidak memberikan manfaat tambahan, serta a, c, d, e, p, dan q sebagai koefisien pengaruh.
+Hᵤ(k) = αₕIₕ(k) + βₕRₕ(k) + γₕCₕ(k) + δₕTₕ(k) − λₕDₕ(k) − μₕPₕ(k)
 
-Teks kunci dapat berbentuk kata kunci, label konsep, pernyataan singkat, angka penting, atau pertanyaan pemantik, dengan prioritas pada kejelasan, keringkasan, keterbacaan, dan kemampuan memperkuat pemahaman tanpa mengalihkan perhatian dari narasi maupun animasi. Apabila humor digunakan, teks kunci dapat mendukung pembalikan ekspektasi atau mempertegas kontras yang lucu, tetapi tidak boleh menjelaskan kelucuan secara berlebihan sehingga menghilangkan efek kejutannya.
+Hᵤ(k) = kontribusi humor kontekstual; Iₕ(k) = ketidaksesuaian lucu; Rₕ(k) = keterpahaman humor; Cₕ(k) = relevansi kontekstual; Tₕ(k) = ketepatan penempatan; Dₕ(k) = gangguan pemahaman; Pₕ(k) = risiko ketidaksesuaian; αₕ, βₕ, γₕ, δₕ, λₕ, μₕ = koefisien pengaruh.
 
-Selanjutnya, **Motion Description Generation Model** menghasilkan deskripsi motion Z(k) melalui Z*(k) = argmax[Z ∈ Ψ(k)] {aₘSₘ(Z,X(k)) + bₘCₘ(Z,S(k)) + cₘIₘ(Z) + dₘTₘ(Z,Z(k-1)) + eₘAₘ(Z,F(k)) + hₘHₘ(Z,Hᵤ(k)) - fₘBₘ(Z) - gₘDₘ(Z)}, dengan Ψ(k) sebagai himpunan kandidat rancangan motion, Sₘ sebagai kesesuaian semantik antara animasi dan narasi, Cₘ sebagai kemampuan visual menjelaskan konsep dan hubungan antarinformasi, Iₘ sebagai nilai informasi visual yang melengkapi audio, Tₘ sebagai kesinambungan objek, komposisi, dan transisi terhadap motion sebelumnya, Aₘ sebagai kesesuaian ekspresi visual dengan dinamika afektif narasi, Hₘ sebagai kesesuaian ekspresi visual dengan humor kontekstual, Bₘ sebagai beban kognitif akibat kompleksitas visual dan gerakan, Dₘ sebagai distraksi atau elemen dekoratif yang tidak mendukung komunikasi, serta aₘ, bₘ, cₘ, dₘ, eₘ, hₘ, fₘ, dan gₘ sebagai koefisien pengaruh.
+**4. Local Engagement**
 
-Deskripsi motion menjelaskan objek yang ditampilkan, komposisi adegan, perubahan keadaan, arah dan karakter gerakan, pergerakan kamera, hubungan antarobjek, kemunculan teks kunci, serta kesinambungan visual dengan kalimat sebelum dan sesudahnya. Humor visual dapat diwujudkan melalui ekspresi karakter, perbandingan skala yang tidak terduga, perubahan keadaan yang mengejutkan, gerakan yang kontras, atau interaksi objek yang menggelitik, dengan tetap menjaga keterkaitan terhadap informasi utama dan menghindari animasi dekoratif yang tidak memiliki fungsi komunikatif.
+L(k) = fθ(X(k), S(k−1), F(k), Hᵤ(k))
 
-Setiap kalimat tidak harus menghasilkan pergantian adegan karena kesinambungan visual dapat dipertahankan selama gagasan dan konteks narasi masih berhubungan, sedangkan satu kalimat yang kompleks dapat direpresentasikan melalui beberapa tahapan animasi dalam satu deskripsi motion. Pada bagian pembukaan, deskripsi motion juga mencakup animasi pendukung hook, transisi retoris, jeda, dan ajakan subscribe. Selama jeda, animasi dapat dipertahankan atau dikembangkan secara terbatas untuk menjaga perhatian tanpa memperkenalkan informasi baru yang mengganggu antisipasi audiens.
+L(k) = daya tarik lokal; X(k) = representasi unit informasi; S(k−1) = kondisi kontekstual sebelumnya; F(k) = kontribusi afektif; Hᵤ(k) = kontribusi humor; θ = parameter fungsi pembelajaran lokal.
 
-Integrasi audio, teks, dan motion selanjutnya dievaluasi melalui fungsi keselarasan multimodal J(k) = uSₐᵥ(k) + vCᵥ(k) + wTₛ(k) + zHₛ(k) - xOᵥ(k) - yBₜ(k), dengan Sₐᵥ(k) sebagai keselarasan semantik audio dan visual, Cᵥ(k) sebagai kontribusi visual terhadap pemahaman, Tₛ(k) sebagai kesesuaian temporal antara informasi yang diucapkan dan perubahan visual, Hₛ(k) sebagai keselarasan waktu dan konteks antara humor verbal dan humor visual, Oᵥ(k) sebagai tingkat kelebihan informasi visual, Bₜ(k) sebagai beban perhatian akibat persaingan antara membaca teks, mendengarkan audio, dan mengamati animasi, serta u, v, w, z, x, dan y sebagai koefisien pengaruh.
+**5. Marginal Information Value**
 
-Fungsi tersebut digunakan untuk mengevaluasi apakah teks kunci, motion, dan humor benar-benar membantu audiens mengikuti narasi, memperkuat pemahaman, serta mempertahankan perhatian, bukan sekadar menambah stimulasi visual atau kelucuan yang tidak relevan. Parameter θ dan φ merupakan parameter fungsi pembelajaran lokal dan global, sedangkan seluruh koefisien pada komponen narasi, humor, teks kunci, motion, dan keselarasan multimodal dirancang untuk diestimasi atau dikalibrasi menggunakan data empiris.
+M(k) = ΔV(k) − ρU(k)
 
-Dengan integrasi ini, HDDEM tidak hanya dirancang untuk mengoptimalkan struktur, kepadatan informasi, pengalaman afektif, variasi humor, dan durasi konten naratif, edukatif, argumentatif, maupun informatif, tetapi juga untuk menghasilkan representasi audiovisual yang mempertahankan kekuatan narasi sebagai medium utama, menggunakan teks layar secara selektif, dan memanfaatkan motion graphics untuk memperjelas konsep, memperkuat ingatan, menciptakan variasi emosional yang natural, serta menjaga kesinambungan perhatian audiens. Model ini masih bersifat konseptual dan memerlukan operasionalisasi variabel, pengujian kontribusi humor, pengujian keselarasan multimodal, evaluasi keterbacaan, pengukuran beban kognitif, serta validasi empiris untuk memastikan ketepatan prediksi, efektivitas optimasi, dan kemampuan generalisasinya.
+M(k) = nilai marginal informasi; ΔV(k) = peningkatan nilai informasi atau pemahaman; U(k) = redundansi informasi; ρ = koefisien penalti redundansi.
+
+**6. Contextual State Update**
+
+S(k) = fφ(S(k−1), X(k), L(k), M(k), F(k), Hᵤ(k))
+
+S(k) = kondisi kontekstual terkini; S(k−1) = kondisi sebelumnya; X(k) = unit informasi; L(k) = daya tarik lokal; M(k) = nilai marginal informasi; F(k) = kontribusi afektif; Hᵤ(k) = kontribusi humor; φ = parameter pembaruan konteks.
+
+**7. Global Contextual Engagement**
+
+G(k) = gφ(S(k))
+
+G(k) = keterlibatan kontekstual global; S(k) = kondisi kontekstual terkini; gφ = fungsi pemetaan konteks.
+
+**8. Multiscale Temporal Engagement**
+
+E(t) = sigmoid(b + Σ[j=1 hingga m] w(j) × Tτ(j)(L, G, M, F, Hᵤ, t) + ωH(t))
+
+E(t) = prediksi keterlibatan pada waktu t; t = waktu dalam detik; sigmoid = fungsi aktivasi dengan keluaran 0–1; b = bias; m = jumlah jendela temporal; w(j) = bobot jendela; Tτ(j) = fungsi integrasi temporal pada jendela berdurasi τ(j); L = daya tarik lokal; G = keterlibatan global; M = nilai marginal; F = kontribusi afektif; Hᵤ = kontribusi humor; H(t) = keterlibatan awal yang dipetakan ke waktu; ω = bobot keterlibatan awal.
+
+**9. Optimal Duration**
+
+T* = argmax[T ∈ D] {∫[0 hingga T] E(t)dt − λT + μC(T) − ξU(T)}
+
+T* = durasi optimal; T = durasi dalam detik; D = himpunan kandidat durasi; E(t) = keterlibatan temporal; λ = penalti durasi; C(T) = kelengkapan informasi; μ = bobot kelengkapan; U(T) = redundansi kumulatif; ξ = penalti redundansi.
+
+**10. Hierarchical Visual Material and Transition Model (HVMTM)**
+
+**10A. Visual Material Specification**
+
+V(k) = {(oᵢ, aᵢ, rᵢ, pᵢ)}[i=1 hingga n(k)]
+
+V(k) = spesifikasi material visual pada unit ke-k; oᵢ = identitas objek atau material; aᵢ = atribut dan detail objek; rᵢ = hubungan dengan material lain; pᵢ = peran dan cara penyajian; n(k) = jumlah material yang diperlukan. Material dapat berupa objek, ilustrasi, diagram, teks, angka, simbol, atau representasi informasi lainnya sesuai kebutuhan pemahaman.
+
+**10B. Visual State Evolution**
+
+Sᵥ(k,j+1) = fᵥ(Sᵥ(k,j), Aᵥ(k,j), X(k))
+
+Sᵥ(k,j) = keadaan visual pada tahap ke-j dalam unit ke-k; Aᵥ(k,j) = tindakan atau perubahan keadaan material; X(k) = informasi naratif; fᵥ = fungsi pembaruan keadaan visual. Satu unit narasi dapat memiliki beberapa tahap visual dengan perubahan objek, atribut, hubungan, atau susunan material.
+
+**10C. Visual Transition Optimization**
+
+Tᵥ*(a→b) = argmax[T ∈ Aᵥ(a,b)] {αᵥC(T) + βᵥS(T) + γᵥI(T) − δᵥD(T) − εᵥB(T)}
+
+Tᵥ*(a→b) = transisi visual optimal dari keadaan a ke b; Aᵥ(a,b) = himpunan kandidat transisi; C(T) = kontinuitas objek dan konteks; S(T) = kesesuaian semantik; I(T) = kontribusi informasi; D(T) = diskontinuitas yang tidak diperlukan; B(T) = beban kognitif; αᵥ, βᵥ, γᵥ, δᵥ, εᵥ = koefisien pengaruh. Transisi mencakup mempertahankan, menambahkan, menghilangkan, mengganti, atau mengubah keadaan material, baik di dalam satu unit maupun antarunit narasi.
+
+**10D. Detailed Motion Description Optimization**
+
+Z*(k) = argmax[Z ∈ Aₘ(k)] {w₁Sₘ(Z,X(k)) + w₂Iₘ(Z) + w₃Dₘ(Z,V(k)) + w₄Cₘ(Z,Tᵥ*) − w₅Bₘ(Z) − w₆Rₘ(Z)}
+
+Z*(k) = deskripsi visual optimal; Aₘ(k) = himpunan kandidat deskripsi; Sₘ = kesesuaian semantik; Iₘ = nilai informasi visual; Dₘ = kelengkapan detail material; Cₘ = kesinambungan dan kejelasan transisi; Bₘ = beban kognitif; Rₘ = redundansi visual; w₁–w₆ = bobot optimasi. Deskripsi memuat material, atribut, hubungan, tahapan penyajian, perubahan keadaan, serta transisi secara terperinci sesuai kebutuhan informasi, tanpa menentukan teknik animasi, perangkat lunak, atau gaya produksi.
+
+**11. Multimodal Alignment Evaluation**
+
+J(k) = uSₐᵥ(k) + vCᵥ(k) + wTₛ(k) + zHₛ(k) − xOᵥ(k) − yBₜ(k)
+
+J(k) = keselarasan multimodal; Sₐᵥ(k) = keselarasan audio-visual; Cᵥ(k) = kontribusi visual terhadap pemahaman; Tₛ(k) = keselarasan temporal; Hₛ(k) = keselarasan humor verbal-visual; Oᵥ(k) = kelebihan informasi visual; Bₜ(k) = beban perhatian; u, v, w, z, x, y = koefisien pengaruh.
+
+**12. Narrative Structure Constraint**
+
+P = (Hₙ, Rₙ, τ₁, Sₙ, τ₂, Bₙ, Cₙ, K₁, K₂)
+
+τ₁ = τ₂ = 0,7 detik
+
+N(Rₙ) = N(Sₙ) = N(K₁) = N(K₂) = 1
+
+K₁ = "Berikan ide atau masukan kalian di kolom komentar."
+
+K₂ = "Terima kasih."
+
+P = urutan struktur narasi; Hₙ = hook; Rₙ = transisi retoris singkat; τ₁ = jeda setelah transisi retoris; Sₙ = ajakan subscribe; τ₂ = jeda setelah subscribe; Bₙ = pembahasan utama; Cₙ = kesimpulan substantif; K₁ dan K₂ = kalimat penutup; N = jumlah kalimat pada komponen terkait. Ajakan subscribe hanya muncul pada Sₙ.
+
+**13. Narrative Coherence Constraint**
+
+Cₕ = Sₕ(Bₙ,Hₙ) + Rₕ(Cₙ,Bₙ) − λₕDₙ(X)
+
+Cₕ ≥ θₕ
+
+Cₕ = koherensi narasi; Sₕ(Bₙ,Hₙ) = tingkat penyelesaian kesenjangan informasi hook oleh pembahasan utama; Rₕ(Cₙ,Bₙ) = relevansi kesimpulan terhadap pembahasan; Dₙ(X) = ketidaksinambungan antarunit informasi; λₕ = penalti ketidaksinambungan; θₕ = ambang koherensi minimum. Narasi harus dapat dipahami secara mandiri tanpa ketergantungan pada material visual.
+
+**14. Cross-Unit Visual Continuity Constraint**
+
+Cᵥ(k) = α꜀Pᵥ(k) + β꜀Rᵥ(k) + γ꜀Tᵥ(k) − δ꜀Dᵥ(k)
+
+Cᵥ(k) ≥ θᵥ
+
+Cᵥ(k) = kesinambungan visual antarunit narasi; Pᵥ(k) = konsistensi identitas dan atribut material yang dipertahankan; Rᵥ(k) = kesinambungan hubungan antarmaterial; Tᵥ(k) = kesesuaian transisi dari unit sebelumnya; Dᵥ(k) = diskontinuitas visual yang tidak diperlukan; α꜀, β꜀, γ꜀, δ꜀ = koefisien pengaruh; θᵥ = ambang kesinambungan minimum. Pergantian material tidak diwajibkan pada setiap kalimat, sedangkan satu kalimat dapat memerlukan beberapa material, keadaan, atau tahapan transisi.
 
 ## Ketentuan Input dan Output
 
-Model menerima input berupa tema yang dituliskan setelah penanda **Tema:** dan harus mengembangkan tema tersebut menjadi narasi edukatif yang utuh, akurat, menarik, mengalir secara natural, serta siap dibacakan oleh sistem text-to-speech, dengan mempertahankan karakter penulisan yang padat, informatif, reflektif, dan tidak terfragmentasi menjadi kalimat-kalimat pendek yang berlebihan. Humor dapat disisipkan secara selektif melalui analogi jenaka, ironi ringan, pembalikan ekspektasi, atau situasi yang menggelitik ketika relevan terhadap pembahasan, tanpa memaksakan lelucon, mengorbankan akurasi, atau mengganggu alur penjelasan.
-
-Struktur pembukaan wajib diawali dengan hook yang kuat, diikuti satu transisi retoris singkat yang relevan, seperti "Yuk, kita telusuri", "Benarkah?", atau ungkapan lain yang sesuai dengan karakter hook. Setelah transisi, berikan jeda sekitar 0,3–1 detik sesuai kebutuhan dramatik dan ritme penyampaian. Selanjutnya, sisipkan ajakan subscribe yang singkat dan natural, misalnya "Tapi sebelum kita bahas, subscribe channel ini dulu agar tidak ketinggalan pembahasan menarik lainnya." Setelah ajakan tersebut, berikan jeda sekitar 0,3–0,5 detik, kemudian pembahasan utama harus segera dimulai dan tetap menjawab rasa penasaran yang telah dibangun sejak hook. Ungkapan transisi tidak boleh digunakan secara berulang atau dipaksakan pada setiap kalimat.
-
-Hasil akhir wajib berupa satu array JSON valid tanpa objek pembungkus, judul, ID, scene ID, metadata, penjelasan model, pengantar, penutup tambahan di luar ketentuan, maupun blok Markdown. Setiap elemen array mewakili tepat satu kalimat narasi dan wajib memiliki tepat tiga properti berurutan, yaitu **"audio_text"** berisi kalimat lengkap yang akan dibacakan TTS dengan tanda baca alami tanpa instruksi teknis, **"key_text"** berisi teks layar yang singkat, bermakna, dan relevan atau **null** apabila tidak diperlukan, serta **"motion_description"** berisi deskripsi motion graphics yang konkret, jelas, dapat diterjemahkan menjadi animasi, dan selaras dengan isi serta urutan narasi.
-
-Transisi retoris dan ajakan subscribe masing-masing ditempatkan dalam elemen JSON tersendiri sebagai kalimat lengkap pada properti "audio_text". Jeda tidak ditulis sebagai kalimat dalam "audio_text", tetapi dinyatakan secara eksplisit melalui instruksi durasi pada "motion_description" elemen transisi terkait dan elemen ajakan subscribe agar sistem produksi dapat menyisipkan keheningan audio dan mempertahankan atau menyesuaikan visual selama interval tersebut. Jeda setelah transisi retoris berdurasi sekitar 0,3–1 detik, sedangkan jeda setelah ajakan subscribe berdurasi sekitar 0,3–0,5 detik. Instruksi jeda tidak boleh dibacakan oleh TTS.
-
-Teks kunci tidak boleh sekadar menyalin kalimat audio secara utuh dan tidak harus ditampilkan pada setiap kalimat. Deskripsi motion harus mengutamakan komunikasi visual melalui ilustrasi, objek, diagram, gerakan, perubahan keadaan, dan transisi yang relevan, dengan gaya animasi dua dimensi yang bersih, konsisten, ekspresif, dan edukatif, tanpa mengharuskan pergantian scene pada setiap kalimat. Kesinambungan visual antarobjek harus dipertahankan ketika konteks narasi masih berhubungan, sedangkan humor visual digunakan secara proporsional untuk mendukung pemahaman dan variasi perhatian.
-
-Seluruh kalimat dalam "audio_text" apabila digabungkan sesuai urutan array harus membentuk satu paragraf narasi yang koheren dan dapat berdiri sendiri tanpa bantuan teks layar maupun visual. Pembukaan, transisi retoris, ajakan subscribe, pembahasan utama, dan kesimpulan harus membentuk satu alur penyampaian yang natural. Ajakan subscribe tidak boleh mengubah arah pembahasan, membocorkan jawaban hook secara prematur, atau membuat pembukaan terasa terlalu panjang.
-
-Setelah narasi utama selesai, tambahkan ajakan penutup dalam dua elemen JSON berikutnya dengan "audio_text" berbunyi: "Berikan ide atau masukan kalian di kolom komentar. Terima kasih." Karena setiap elemen hanya boleh memuat satu kalimat, ajakan tersebut harus dibagi menjadi dua elemen berurutan, masing-masing dengan "key_text" yang singkat atau null dan "motion_description" yang menggambarkan animasi ajakan komentar serta ucapan terima kasih secara konsisten dengan gaya visual video. Ajakan subscribe tidak diulang pada penutup karena telah ditempatkan pada bagian pembukaan. Ajakan penutup tidak termasuk bagian narasi edukatif utama dan tidak boleh mengubah kesimpulan substantif yang telah disampaikan.
-
-Seluruh string JSON wajib menggunakan tanda kutip ganda yang valid, tanpa komentar atau koma berlebih. Output hanya boleh memuat array JSON tersebut dan tidak boleh menjelaskan proses pembuatannya.
+Input berupa **Tema: [judul]** yang diproses berdasarkan formulasi matematis HDDEM. Output berupa satu array JSON valid tanpa objek pembungkus, dengan setiap elemen mewakili tepat satu kalimat dan memiliki dua properti berurutan: **"audio_text"** = kalimat narasi lengkap untuk TTS tanpa instruksi teknis; **"motion_description"** = deskripsi terperinci mengenai material visual, cara penyajian, perkembangan keadaan, dan transisi berdasarkan HVMTM. Teks, angka, atau label visual apabila diperlukan menjadi bagian dari **"motion_description"**, bukan properti terpisah. Instruksi jeda hening sesuai kendala struktur narasi dicantumkan dalam **"motion_description"** elemen terkait, bukan dalam **"audio_text"**, tanpa membuat elemen tambahan. Output menggunakan tanda kutip ganda yang valid, tanpa komentar, koma berlebih, metadata, atau teks di luar array JSON.
 
 **Tema: [masukkan judul di sini]**

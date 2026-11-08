@@ -34,7 +34,7 @@ function existingVideo(visual){
 try{
  if(stageName==='audio'){
   report(3,'Menyiapkan narasi, timing kata, dan musik.');
-  const script=readJson(p.script);if(!Array.isArray(script)||!script.length||script.some(s=>typeof s.audio_text!=='string'))throw new Error('Naskah harus berupa array dengan audio_text.');
+  const script=readJson(p.script);if(!Array.isArray(script)||!script.length||script.some(s=>typeof s?.audio_text!=='string'||!s.audio_text.trim()||typeof s.motion_description!=='string'))throw new Error('Naskah harus berupa array dengan audio_text dan motion_description pada setiap elemen.');
   cpSync(path.join(ROOT,'public/fonts'),path.join(p.publicDir,'fonts'),{recursive:true});
   const python=existsSync(path.join(ROOT,'.venv/bin/python'))?path.join(ROOT,'.venv/bin/python'):'python3';
   await command(python,[path.join(ROOT,'scripts/prepare_audio.py')],{env,signal});
