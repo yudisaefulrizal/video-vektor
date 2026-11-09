@@ -5,6 +5,7 @@ import {ensureProject,projectPaths,projectEnvironment,loadEnvironment} from './l
 import {renderPicture,verifyPicture,verifyOutput} from './lib/media.mjs';
 import {assemble} from './assemble.mjs';
 import {exportAudio} from './export-audio.mjs';
+import {lintSource} from './lib/lint-source.mjs';
 import {updateProgress} from './lib/progress.mjs';
 import {agentLabel,DEFAULT_AGENT} from './lib/agent-session.mjs';
 
@@ -48,6 +49,8 @@ try{
   if(existingVideo(visual)){report(5,'Gambar final yang sama masih tersedia.',{render:{completed:t.durationInFrames,total:t.durationInFrames}});}
   else if(!session.force&&existsSync(file)){verifyPicture(file,t);report(5,'Gambar video utuh sudah tersedia.',{render:{completed:t.durationInFrames,total:t.durationInFrames}});}
   else{
+   const problems=lintSource(p.source);
+   if(problems.length)throw new Error(`Pemeriksaan kode gagal sebelum render:\n${problems.join('\n')}`);
    partial=path.join(path.dirname(file),'visual.partial.mp4');
    report(5,'Merender seluruh video dalam satu proses Remotion.',{render:{completed:0,total:t.durationInFrames}});
    await renderPicture({entry:path.join(p.source,'index.ts'),composition:'ProjectVisual',output:partial,timeline:t,publicDir:p.publicDir,env,signal,onProgress:completed=>updateProgress(p,{render:{completed,total:t.durationInFrames}})});
